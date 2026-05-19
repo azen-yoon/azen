@@ -7,7 +7,6 @@ import {
   DEFAULT_DESCRIPTION,
   DEFAULT_KEYWORDS,
   getSiteUrl,
-  OG_IMAGE_PATH,
   SITE_NAME,
 } from "@/lib/seo";
 import "./globals.css";
@@ -27,7 +26,7 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     title: `${SITE_NAME} | 산업용 필터 솔루션`,
     description: DEFAULT_DESCRIPTION,
-    images: [{ url: OG_IMAGE_PATH, alt: SITE_NAME }],
+    images: [{ url: "https://www.a-zen.co.kr/logo.png", alt: SITE_NAME }],
   },
   verification: {
     google: "a7pf7uczinpPsIfvCeOwHJOLzMqoATXycVIj2EUwTEA",
