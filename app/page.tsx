@@ -6,20 +6,15 @@ import { Factory, ShieldCheck, Truck, Wrench } from "lucide-react";
 import { HomeHeroPhoneCtas } from "@/components/features/HomeHeroPhoneCtas";
 import { HomeProductsCarousel } from "@/components/features/HomeProductsCarousel";
 import { createStaticClient } from "@/lib/supabase/static";
-import { createPageMetadata, SITE_NAME } from "@/lib/seo";
-
-const homeMetadata = createPageMetadata({
-  title: SITE_NAME,
-  description:
-    "멈추지 않는 공정, 빈틈없는 필터 케어 솔루션. 공조·집진·수처리 필터부터 전기·유공압 부품까지 AZEN이 책임집니다.",
-  path: "/",
-});
+import { DEFAULT_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  ...homeMetadata,
   title: { absolute: SITE_NAME },
+  description: DEFAULT_DESCRIPTION,
+  alternates: {
+    canonical: `${SITE_URL}/`,
+  },
   openGraph: {
-    ...homeMetadata.openGraph,
     title: SITE_NAME,
   },
 };

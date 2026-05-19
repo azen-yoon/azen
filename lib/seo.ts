@@ -3,10 +3,24 @@ import type { Metadata } from "next";
 import { createStaticClient } from "@/lib/supabase/static";
 
 export const SITE_NAME = "AZEN";
-export const OG_IMAGE_PATH = "/logo.png";
+export const SITE_URL = "https://www.a-zen.co.kr";
+export const OG_IMAGE_PATH = "/og-image.png";
+export const DEFAULT_OG_IMAGE_URL = `${SITE_URL}${OG_IMAGE_PATH}`;
 
-export const DEFAULT_DESCRIPTION =
-  "멈추지 않는 공정, 빈틈없는 필터 케어 솔루션. 공조·집진·수처리 필터부터 전기·유공압 부품까지 산업용 필터 전문 기업 AZEN.";
+export const SITE_DESCRIPTION =
+  "멈추지 않는 공정, 빈틈없는 필터 케어 솔루션. AZEN이 책임집니다.";
+
+export const DEFAULT_DESCRIPTION = SITE_DESCRIPTION;
+export const DEFAULT_OG_DESCRIPTION = SITE_DESCRIPTION;
+
+export const DEFAULT_OG_IMAGES = [
+  {
+    url: DEFAULT_OG_IMAGE_URL,
+    width: 1200,
+    height: 630,
+    alt: SITE_NAME,
+  },
+] as const;
 
 export const DEFAULT_KEYWORDS = [
   "AZEN",
@@ -22,23 +36,11 @@ export const DEFAULT_KEYWORDS = [
   "구매대행",
 ];
 
-export const getSiteUrl = (): string => {
-  const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (fromEnv) {
-    return fromEnv.replace(/\/$/, "");
-  }
-
-  const vercel = process.env.VERCEL_URL?.trim();
-  if (vercel) {
-    return `https://${vercel.replace(/^https?:\/\//, "")}`;
-  }
-
-  return "http://localhost:3000";
-};
+export const getSiteUrl = (): string => SITE_URL;
 
 export const absoluteUrl = (path: string): string => {
   const normalized = path.startsWith("/") ? path : `/${path}`;
-  return `${getSiteUrl()}${normalized}`;
+  return `${SITE_URL}${normalized}`;
 };
 
 export const stripHtml = (html: string): string =>
@@ -66,7 +68,7 @@ export const createPageMetadata = ({
 }: CreatePageMetadataOptions): Metadata => {
   const url = absoluteUrl(path);
   const ogTitle = `${title} | ${SITE_NAME}`;
-  const imageUrl = ogImage?.trim() || OG_IMAGE_PATH;
+  const imageUrl = ogImage?.trim() || DEFAULT_OG_IMAGE_URL;
 
   return {
     title,
@@ -85,6 +87,8 @@ export const createPageMetadata = ({
       images: [
         {
           url: imageUrl,
+          width: 1200,
+          height: 630,
           alt: ogTitle,
         },
       ],
