@@ -1,5 +1,14 @@
 import Image from "next/image";
 import { Droplets, Factory, LayoutDashboard, ShieldCheck, Wind, Wrench } from "lucide-react";
+import { createPageMetadata } from "@/lib/seo";
+
+export const metadata = createPageMetadata({
+  title: "회사소개",
+  description:
+    "AZEN은 공조기·집진기·수처리 필터 및 산업용 여과 솔루션을 제공하는 전문 기업입니다. 품질 검수, 맞춤 제안, 신속 납품, 사후 기술 지원까지 책임집니다.",
+  keywords: ["AZEN", "회사소개", "산업용 필터", "수처리 필터", "공조기 필터", "집진기 필터"],
+  path: "/about",
+});
 
 export const revalidate = 300;
 
@@ -218,9 +227,10 @@ export default function AboutPage() {
                   TEL
                 </h3>
                 <p className="text-lg leading-[1.6] text-[#0b1c30] dark:text-[#fefbfe]">
-                  <a href="tel:031-889-0225" className="hover:underline">
+                  <a href="tel:031-889-0225" className="hover:underline md:hidden">
                     031-889-0225
                   </a>
+                  <span className="hidden md:inline">031-889-0225</span>
                 </p>
               </div>
               <div>
@@ -228,6 +238,16 @@ export default function AboutPage() {
                   FAX
                 </h3>
                 <p className="text-lg leading-[1.6] text-[#0b1c30] dark:text-[#fefbfe]">031-889-0226</p>
+              </div>
+              <div>
+                <h3 className="mb-2 text-sm font-semibold tracking-[0.05em] text-[#1d4ed8] dark:text-[#7fafff]">
+                  E-mail
+                </h3>
+                <p className="text-lg leading-[1.6] text-[#0b1c30] dark:text-[#fefbfe]">
+                  <a href="mailto:azen2023@naver.com" className="hover:underline">
+                    azen2023@naver.com
+                  </a>
+                </p>
               </div>
             </div>
           </div>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { unstable_cache } from "next/cache";
+import type { Metadata } from "next";
 import { ClipboardList } from "lucide-react";
 import { createStaticClient } from "@/lib/supabase/static";
 import { ProductDetailBackButton } from "@/components/features/ProductDetailBackButton";
@@ -9,11 +10,35 @@ import {
   WATER_SUB_CARDS,
   resolveWaterSubSlug,
 } from "@/lib/products-catalog";
+import { createPageMetadata } from "@/lib/seo";
 
 export const revalidate = 300;
 
 interface WaterSubPageProps {
   params: Promise<{ sub: string }>;
+}
+
+export async function generateMetadata({ params }: WaterSubPageProps): Promise<Metadata> {
+  const { sub } = await params;
+  const categorySlug = resolveWaterSubSlug(sub);
+
+  if (!categorySlug) {
+    return createPageMetadata({
+      title: "수처리 필터",
+      description: "수처리 필터 제품 목록",
+      path: `/products/water/${sub}`,
+      noIndex: true,
+    });
+  }
+
+  const card = WATER_SUB_CARDS.find((item) => item.slug === categorySlug);
+  const title = card?.label ?? CATALOG_SUB_LABEL_FALLBACK[categorySlug] ?? categorySlug;
+
+  return createPageMetadata({
+    title: `${title} 수처리 필터`,
+    description: `AZEN ${title} 수처리 필터 제품 목록. DEPTH·CARBON·PLEATED 등 산업용 수처리 필터 라인업을 확인하세요.`,
+    path: `/products/water/${sub}`,
+  });
 }
 
 const crumbLinkClass =

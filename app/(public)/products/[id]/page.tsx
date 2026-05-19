@@ -1,17 +1,44 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { unstable_cache } from "next/cache";
+import type { Metadata } from "next";
 import { ClipboardList, ListChecks } from "lucide-react";
 import { createStaticClient } from "@/lib/supabase/static";
 import { WATER_SUB_SLUGS } from "@/lib/products-catalog";
 import { ProductDetailBackButton } from "@/components/features/ProductDetailBackButton";
 import { ProductDetailHtmlContent } from "@/components/features/ProductDetailHtmlContent";
 import { ProductGallery } from "@/components/features/ProductGallery";
+import { createPageMetadata, getProductForSeo, stripHtml } from "@/lib/seo";
 
 export const revalidate = 300;
 
 interface ProductDetailPageProps {
   params: Promise<{ id: string }>;
+}
+
+export async function generateMetadata({ params }: ProductDetailPageProps): Promise<Metadata> {
+  const { id } = await params;
+  const product = await getProductForSeo(id);
+
+  if (!product) {
+    return createPageMetadata({
+      title: "제품을 찾을 수 없습니다",
+      description: "요청하신 제품 정보를 찾을 수 없습니다.",
+      path: `/products/${id}`,
+      noIndex: true,
+    });
+  }
+
+  const description = product.description
+    ? stripHtml(product.description).slice(0, 160)
+    : `${product.name} 제품 상세 정보를 AZEN에서 확인하세요.`;
+
+  return createPageMetadata({
+    title: product.name,
+    description,
+    path: `/products/${product.id}`,
+    ogImage: product.thumbnail_url,
+  });
 }
 
 interface CategoryRow {

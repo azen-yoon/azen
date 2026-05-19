@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { unstable_cache } from "next/cache";
+import type { Metadata } from "next";
 import { createStaticClient } from "@/lib/supabase/static";
 import {
   CATALOG_SUB_LABEL_FALLBACK,
@@ -12,18 +13,37 @@ import {
   type ProductCatalogGroup,
 } from "@/lib/products-catalog";
 import { ProductsCatalogClient, type CatalogProduct } from "@/components/features/ProductsCatalogClient";
+import { createPageMetadata } from "@/lib/seo";
 
 export const revalidate = 300;
+
+interface ProductsPageProps {
+  searchParams: Promise<{ category?: string }>;
+}
+
+export async function generateMetadata({ searchParams }: ProductsPageProps): Promise<Metadata> {
+  const { category: rawCategory } = await searchParams;
+  const slug = rawCategory?.trim() || "air_handling";
+  const group = resolveCatalogGroup(slug);
+  const label = CATALOG_SUB_LABEL_FALLBACK[slug] ?? "제품";
+
+  const description =
+    group === "electric"
+      ? `${label} 라인업. 전기 부품·유공압 부품 등 산업 현장에 필요한 제품을 AZEN에서 확인하세요.`
+      : `${label} 라인업. 공조·집진·수처리 등 산업용 필터 제품을 AZEN에서 확인하세요.`;
+
+  return createPageMetadata({
+    title: `${label} 제품`,
+    description,
+    path: `/products?category=${encodeURIComponent(slug)}`,
+  });
+}
 
 interface CategoryRow {
   id: string;
   name: string;
   slug: string;
   parent_id: string | null;
-}
-
-interface ProductsPageProps {
-  searchParams: Promise<{ category?: string }>;
 }
 
 const chipOrder = (group: ProductCatalogGroup) =>

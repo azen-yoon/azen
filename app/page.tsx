@@ -5,6 +5,14 @@ import { Factory, ShieldCheck, Truck, Wrench } from "lucide-react";
 import { HomeHeroPhoneCtas } from "@/components/features/HomeHeroPhoneCtas";
 import { HomeProductsCarousel } from "@/components/features/HomeProductsCarousel";
 import { createStaticClient } from "@/lib/supabase/static";
+import { createPageMetadata } from "@/lib/seo";
+
+export const metadata = createPageMetadata({
+  title: "홈",
+  description:
+    "멈추지 않는 공정, 빈틈없는 필터 케어 솔루션. 공조·집진·수처리 필터부터 전기·유공압 부품까지 AZEN이 책임집니다.",
+  path: "/",
+});
 
 export const revalidate = 300;
 

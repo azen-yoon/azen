@@ -1,4 +1,13 @@
 import { Mail, Package, Phone, TrendingDown, Truck, User } from "lucide-react";
+import { createPageMetadata } from "@/lib/seo";
+
+export const metadata = createPageMetadata({
+  title: "구매대행",
+  description:
+    "국내외 전기부품·제어기기·자동화 부품 등 산업 소모품 구매대행 서비스. 견적 비교부터 통관·배송까지 원스톱으로 지원합니다.",
+  keywords: ["AZEN", "구매대행", "전기부품", "산업 소모품", "수입 대행", "통관"],
+  path: "/purchase",
+});
 
 const featureCards = [
   {

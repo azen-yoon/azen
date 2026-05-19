@@ -1,6 +1,14 @@
 import { AdminFooter } from "@/components/layout/AdminFooter";
 import { AdminHeader } from "@/components/layout/AdminHeader";
 import { AdminLightModeGuard } from "@/components/layout/AdminLightModeGuard";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default function AdminLayout({
   children,

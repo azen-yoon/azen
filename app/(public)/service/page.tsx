@@ -1,5 +1,14 @@
 import { PublicServicePageClient } from "@/components/features/PublicServicePageClient";
 import { createStaticClient } from "@/lib/supabase/static";
+import { createPageMetadata } from "@/lib/seo";
+
+export const metadata = createPageMetadata({
+  title: "교체·시공 사례",
+  description:
+    "AZEN의 필터 교체·시공 프로젝트 사례를 확인하세요. 현장 맞춤 설계부터 설치, 사후 관리까지 검증된 실적을 제공합니다.",
+  keywords: ["AZEN", "필터 교체", "필터 시공", "교체 시공", "산업용 필터", "시공 사례"],
+  path: "/service",
+});
 
 export const revalidate = 300;
 

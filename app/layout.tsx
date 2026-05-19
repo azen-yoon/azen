@@ -3,12 +3,35 @@ import type { Metadata } from "next";
 import { ConditionalFooter } from "@/components/layout/ConditionalFooter";
 import { ConditionalHeader } from "@/components/layout/ConditionalHeader";
 import { ThemeClassBridge } from "@/components/layout/ThemeClassBridge";
+import {
+  DEFAULT_DESCRIPTION,
+  DEFAULT_KEYWORDS,
+  getSiteUrl,
+  OG_IMAGE_PATH,
+  SITE_NAME,
+} from "@/lib/seo";
 import "./globals.css";
 import "./prose.css";
 
 export const metadata: Metadata = {
-  title: "azen",
-  description: "공업용 필터 판매 회사 홈페이지",
+  metadataBase: new URL(getSiteUrl()),
+  title: {
+    default: `${SITE_NAME} | 산업용 필터 솔루션`,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: DEFAULT_DESCRIPTION,
+  keywords: DEFAULT_KEYWORDS,
+  openGraph: {
+    type: "website",
+    locale: "ko_KR",
+    siteName: SITE_NAME,
+    title: `${SITE_NAME} | 산업용 필터 솔루션`,
+    description: DEFAULT_DESCRIPTION,
+    images: [{ url: OG_IMAGE_PATH, alt: SITE_NAME }],
+  },
+  verification: {
+    google: "a7pf7uczinpPsIfvCeOwHJOLzMqoATXycVIj2EUwTEA",
+  },
 };
 
 export default function RootLayout({
