@@ -6,14 +6,13 @@ import { ThemeClassBridge } from "@/components/layout/ThemeClassBridge";
 import {
   DEFAULT_DESCRIPTION,
   DEFAULT_KEYWORDS,
-  getSiteUrl,
   SITE_NAME,
 } from "@/lib/seo";
 import "./globals.css";
 import "./prose.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(getSiteUrl()),
+  metadataBase: new URL("https://www.a-zen.co.kr"),
   title: {
     default: `${SITE_NAME} | 산업용 필터 솔루션`,
     template: `%s | ${SITE_NAME}`,
@@ -25,8 +24,8 @@ export const metadata: Metadata = {
     locale: "ko_KR",
     siteName: SITE_NAME,
     title: `${SITE_NAME} | 산업용 필터 솔루션`,
-    description: DEFAULT_DESCRIPTION,
-    images: [{ url: "https://www.a-zen.co.kr/logo.png", width: 1200, height: 630, alt: SITE_NAME }],
+    description: "멈추지 않는 공정, 빈틈없는 필터 케어 솔루션. AZEN이 책임집니다.",
+    images: [{ url: "https://www.a-zen.co.kr/og-image.png", width: 1200, height: 630, alt: SITE_NAME }],
   },
   verification: {
     google: "a7pf7uczinpPsIfvCeOwHJOLzMqoATXycVIj2EUwTEA",
