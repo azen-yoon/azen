@@ -4,9 +4,9 @@ import { ConditionalFooter } from "@/components/layout/ConditionalFooter";
 import { ConditionalHeader } from "@/components/layout/ConditionalHeader";
 import { ThemeClassBridge } from "@/components/layout/ThemeClassBridge";
 import {
+  buildOpenGraph,
   DEFAULT_DESCRIPTION,
   DEFAULT_KEYWORDS,
-  DEFAULT_OG_IMAGES,
   SITE_NAME,
   SITE_URL,
 } from "@/lib/seo";
@@ -21,14 +21,10 @@ export const metadata: Metadata = {
   },
   description: DEFAULT_DESCRIPTION,
   keywords: DEFAULT_KEYWORDS,
-  openGraph: {
-    type: "website",
-    locale: "ko_KR",
-    siteName: SITE_NAME,
+  openGraph: buildOpenGraph({
     title: `${SITE_NAME} | 산업용 필터 솔루션`,
-    description: DEFAULT_DESCRIPTION,
-    images: [...DEFAULT_OG_IMAGES],
-  },
+    url: SITE_URL,
+  }),
   verification: {
     google: "a7pf7uczinpPsIfvCeOwHJOLzMqoATXycVIj2EUwTEA",
     other: {

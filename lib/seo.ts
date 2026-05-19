@@ -49,6 +49,36 @@ export const stripHtml = (html: string): string =>
     .replace(/\s+/g, " ")
     .trim();
 
+type BuildOpenGraphOptions = {
+  title: string;
+  url?: string;
+  description?: string;
+  ogImage?: string | null;
+};
+
+/** Kakao·Facebook 등 크롤러용 — og 필드 누락 방지 */
+export const buildOpenGraph = ({
+  title,
+  url = SITE_URL,
+  description = DEFAULT_OG_DESCRIPTION,
+  ogImage,
+}: BuildOpenGraphOptions): NonNullable<Metadata["openGraph"]> => ({
+  type: "website",
+  url,
+  siteName: SITE_NAME,
+  title,
+  description,
+  locale: "ko_KR",
+  images: [
+    {
+      url: ogImage?.trim() || DEFAULT_OG_IMAGE_URL,
+      width: 1200,
+      height: 630,
+      alt: title,
+    },
+  ],
+});
+
 type CreatePageMetadataOptions = {
   title: string;
   description?: string;
@@ -77,22 +107,12 @@ export const createPageMetadata = ({
     alternates: {
       canonical: url,
     },
-    openGraph: {
+    openGraph: buildOpenGraph({
       title: ogTitle,
-      description,
       url,
-      siteName: SITE_NAME,
-      locale: "ko_KR",
-      type: "website",
-      images: [
-        {
-          url: imageUrl,
-          width: 1200,
-          height: 630,
-          alt: ogTitle,
-        },
-      ],
-    },
+      description: DEFAULT_OG_DESCRIPTION,
+      ogImage: imageUrl,
+    }),
     robots: noIndex ? { index: false, follow: false } : { index: true, follow: true },
   };
 };
