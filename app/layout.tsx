@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     title: `${SITE_NAME} | 산업용 필터 솔루션`,
     description: DEFAULT_DESCRIPTION,
-    images: [{ url: "https://www.a-zen.co.kr/logo.png", alt: SITE_NAME }],
+    images: [{ url: "https://www.a-zen.co.kr/logo.png", width: 1200, height: 630, alt: SITE_NAME }],
   },
   verification: {
     google: "a7pf7uczinpPsIfvCeOwHJOLzMqoATXycVIj2EUwTEA",
