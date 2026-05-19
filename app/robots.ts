@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
-import { absoluteUrl } from "@/lib/seo";
+
+const SITE_URL = "https://www.a-zen.co.kr";
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -8,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: ["/admin/", "/login"],
     },
-    sitemap: absoluteUrl("/sitemap.xml"),
+    sitemap: `${SITE_URL}/sitemap.xml`,
   };
 }

@@ -6,11 +6,11 @@ import {
 } from "@/lib/products-catalog";
 import { getPublishedProductsForSitemap } from "@/lib/seo";
 
-const SITEMAP_BASE_URL = "https://www.a-zen.co.kr";
+const SITE_URL = "https://www.a-zen.co.kr";
 
 const sitemapUrl = (path: string): string => {
   const normalized = path.startsWith("/") ? path : `/${path}`;
-  return `${SITEMAP_BASE_URL}${normalized}`;
+  return `${SITE_URL}${normalized}`;
 };
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
