@@ -4,31 +4,38 @@ import {
   FILTER_SUB_SLUGS,
   WATER_SUB_CARDS,
 } from "@/lib/products-catalog";
-import { absoluteUrl, getPublishedProductsForSitemap } from "@/lib/seo";
+import { getPublishedProductsForSitemap } from "@/lib/seo";
+
+const SITEMAP_BASE_URL = "https://www.a-zen.co.kr";
+
+const sitemapUrl = (path: string): string => {
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  return `${SITEMAP_BASE_URL}${normalized}`;
+};
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
   const staticRoutes: MetadataRoute.Sitemap = [
     {
-      url: absoluteUrl("/"),
+      url: sitemapUrl("/"),
       lastModified: now,
       changeFrequency: "weekly",
       priority: 1,
     },
     {
-      url: absoluteUrl("/about"),
+      url: sitemapUrl("/about"),
       lastModified: now,
       changeFrequency: "monthly",
       priority: 0.7,
     },
     {
-      url: absoluteUrl("/purchase"),
+      url: sitemapUrl("/purchase"),
       lastModified: now,
       changeFrequency: "monthly",
       priority: 0.7,
     },
     {
-      url: absoluteUrl("/service"),
+      url: sitemapUrl("/service"),
       lastModified: now,
       changeFrequency: "weekly",
       priority: 0.8,
@@ -39,14 +46,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...FILTER_SUB_SLUGS,
     ...ELECTRIC_SUB_SLUGS,
   ].map((slug) => ({
-    url: absoluteUrl(`/products?category=${encodeURIComponent(slug)}`),
+    url: sitemapUrl(`/products?category=${encodeURIComponent(slug)}`),
     lastModified: now,
     changeFrequency: "weekly" as const,
     priority: slug === "air_handling" ? 0.9 : 0.8,
   }));
 
   const waterRoutes: MetadataRoute.Sitemap = WATER_SUB_CARDS.map((card) => ({
-    url: absoluteUrl(`/products/water/${card.path}`),
+    url: sitemapUrl(`/products/water/${card.path}`),
     lastModified: now,
     changeFrequency: "weekly" as const,
     priority: 0.7,
@@ -54,7 +61,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const products = await getPublishedProductsForSitemap();
   const productRoutes: MetadataRoute.Sitemap = products.map((product) => ({
-    url: absoluteUrl(`/products/${product.id}`),
+    url: sitemapUrl(`/products/${product.id}`),
     lastModified: product.updated_at ? new Date(product.updated_at) : now,
     changeFrequency: "weekly" as const,
     priority: 0.8,
