@@ -6,6 +6,7 @@ import {
   createStoragePath,
   getStoragePathFromPublicUrl,
   isValidUrl,
+  parseExistingServiceCaseImageCaptions,
   SERVICE_CASE_IMAGE_BUCKET,
   type ServiceCaseDetail,
   type ServiceCaseImageRow,
@@ -105,6 +106,47 @@ export default async function AdminServiceEditPage({ params }: AdminServiceEditP
       return { error: `시공사례 수정에 실패했습니다: ${updateError.message}` };
     }
 
+    const captionUpdates = parseExistingServiceCaseImageCaptions(formData.get("existing_image_captions_json"));
+    const { data: currentImages, error: fetchImagesError } = await actionClient
+      .from("azen_service_case_images")
+      .select("id, caption")
+      .eq("case_id", id);
+
+    if (fetchImagesError) {
+      return { error: `기존 이미지 조회에 실패했습니다: ${fetchImagesError.message}` };
+    }
+
+    for (const image of currentImages ?? []) {
+      if (!(image.id in captionUpdates)) {
+        continue;
+      }
+
+      const nextCaption = captionUpdates[image.id] || null;
+      const currentCaption = typeof image.caption === "string" ? image.caption.trim() : null;
+      if ((currentCaption ?? "") === (nextCaption ?? "")) {
+        continue;
+      }
+
+      const { data: updatedImage, error: captionUpdateError } = await actionClient
+        .from("azen_service_case_images")
+        .update({ caption: nextCaption })
+        .eq("id", image.id)
+        .eq("case_id", id)
+        .select("id")
+        .maybeSingle();
+
+      if (captionUpdateError) {
+        return { error: `기존 이미지 캡션 수정에 실패했습니다: ${captionUpdateError.message}` };
+      }
+
+      if (!updatedImage) {
+        return {
+          error:
+            "기존 이미지 캡션 수정에 실패했습니다. Supabase SQL Editor에서 `supabase/admin-011-service-case-images-update-rls.sql`을 실행해 UPDATE RLS 정책을 추가해주세요.",
+        };
+      }
+    }
+
     const lastSortOrder = caseImages.at(-1)?.sort_order ?? -1;
     const additionalRows: Array<{ case_id: string; url: string; caption: string | null; sort_order: number }> = [];
 
@@ -156,7 +198,8 @@ export default async function AdminServiceEditPage({ params }: AdminServiceEditP
       }
     }
 
-    redirect("/admin/service?toast=updated");
+    revalidatePath(`/admin/service/${id}/edit`);
+    redirect(`/admin/service/${id}/edit?toast=updated`);
   };
 
   const deleteImageAction = async (formData: FormData) => {

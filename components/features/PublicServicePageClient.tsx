@@ -216,16 +216,14 @@ export const PublicServicePageClient = ({ cases }: PublicServicePageClientProps)
                   onClick={() => openCaseModal(serviceCase.id)}
                   className="glass-card group overflow-hidden rounded-2xl border border-border bg-background text-left transition-transform duration-200 hover:-translate-y-1"
                 >
-                  <div className="aspect-[4/3] overflow-hidden bg-elevated">
+                  <div className="relative aspect-[4/3] overflow-hidden bg-elevated">
                     {serviceCase.thumbnail_url ? (
-                      <>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={serviceCase.thumbnail_url}
-                          alt={serviceCase.title}
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                      </>
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={serviceCase.thumbnail_url}
+                        alt={serviceCase.title}
+                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
                     ) : (
                       <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
                         이미지 없음
@@ -261,9 +259,13 @@ export const PublicServicePageClient = ({ cases }: PublicServicePageClientProps)
             </button>
 
             <div className="relative overflow-hidden rounded-t-3xl bg-black">
-              <div className="aspect-[4/3] overflow-hidden rounded-t-3xl">
+              <div className="relative aspect-[4/3] overflow-hidden rounded-t-3xl">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={currentSlide.url} alt={selectedCase.title} className="h-full w-full object-contain" />
+                <img
+                  src={currentSlide.url}
+                  alt={selectedCase.title}
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
               </div>
 
               {selectedSlides.length > 1 && (

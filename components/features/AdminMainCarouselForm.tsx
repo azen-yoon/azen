@@ -1,8 +1,8 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
-import { CheckCircle2, Loader2, X } from "lucide-react";
-import { createPortal } from "react-dom";
+import { useActionState, useState } from "react";
+import { Loader2 } from "lucide-react";
+import { AdminActionToast } from "@/components/features/AdminActionToast";
 
 interface ProductOption {
   id: string;
@@ -34,16 +34,7 @@ export const AdminMainCarouselForm = ({ slots, products, action }: AdminMainCaro
     error: null,
   });
   const [dismissedSuccessMessage, setDismissedSuccessMessage] = useState<string | null>(null);
-  const isToastVisible = Boolean(state.success && state.success !== dismissedSuccessMessage);
-
-  useEffect(() => {
-    if (!isToastVisible || !state.success) return;
-    const timer = window.setTimeout(() => {
-      setDismissedSuccessMessage(state.success);
-    }, 2500);
-
-    return () => window.clearTimeout(timer);
-  }, [isToastVisible, state.success]);
+  const successMessage = state.success && state.success !== dismissedSuccessMessage ? state.success : null;
 
   return (
     <>
@@ -96,49 +87,12 @@ export const AdminMainCarouselForm = ({ slots, products, action }: AdminMainCaro
         </button>
       </form>
 
-      {typeof document !== "undefined" &&
-        isToastVisible &&
-        state.success &&
-        createPortal(
-          <div
-            style={{
-              position: "fixed",
-              right: 24,
-              bottom: 24,
-              zIndex: 9999,
-              width: 320,
-              maxWidth: "calc(100vw - 2rem)",
-              display: "flex",
-              alignItems: "flex-start",
-              gap: 8,
-              borderRadius: 12,
-              border: "1px solid rgba(16, 185, 129, 0.3)",
-              background: "var(--background)",
-              color: "#047857",
-              boxShadow: "0 10px 30px rgba(0, 0, 0, 0.2)",
-              padding: "12px 14px",
-            }}
-          >
-            <CheckCircle2 size={16} />
-            <span style={{ flex: 1, lineHeight: 1.4, fontSize: 14 }}>저장되었습니다.</span>
-            <button
-              type="button"
-              aria-label="토스트 닫기"
-              onClick={() => setDismissedSuccessMessage(state.success)}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: 4,
-                padding: 2,
-                color: "inherit",
-              }}
-            >
-              <X size={14} />
-            </button>
-          </div>,
-          document.body,
-        )}
+      {successMessage && (
+        <AdminActionToast
+          message={successMessage}
+          onClose={() => setDismissedSuccessMessage(state.success)}
+        />
+      )}
     </>
   );
 };

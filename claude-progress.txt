@@ -401,3 +401,8 @@
 - `products/water/[sub]/page.tsx` 히어로 제거·제품 상세형 타이틀 바(뒤로가기+브레드크럼), 이미지 w-80 h-60, description `dangerouslySetInnerHTML`
 - `ProductsCatalogClient.tsx` 수처리 서브카테고리 카드: 서버 products prop 기준 첫 제품 썸네일 배경 이미지 카드(DEPTH/CARBON/PLEATED, hover 오버레이)
 - ADMIN-010: `lib/image-webp.ts` Canvas WebP 변환, 제품·시공사례 폼 submit 시 변환 적용, `next.config.ts` serverActions bodySizeLimit 10MB
+- `PublicServicePageClient.tsx` 시공사례 카드·모달 이미지 `aspect-[4/3]` + `object-cover` 고정(세로 사진 레이아웃 깨짐 방지)
+- ADMIN-011: 시공사례 수정 폼 기존 추가 이미지 캡션 인라인 input + 저장 시 `azen_service_case_images.caption` 업데이트
+- ADMIN-011 fix: 캡션 필드명을 `existing_image_caption_{id}`로 변경(Server Action FormData 다중값 누락 방지), 저장 후 edit 페이지 revalidate
+- ADMIN-011 fix2: 캡션을 `existing_image_captions_json`으로 명시 전송(controlled state), UPDATE RLS 누락 시 에러 표시, `supabase/admin-011-service-case-images-update-rls.sql` 추가
+- 관리자 layout에 `AdminSearchParamsToast` 추가 — 저장/등록/삭제 후 `?toast=` URL 기반 우하단 토스트 전역 표시

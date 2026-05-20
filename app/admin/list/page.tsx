@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Plus, Tag } from "lucide-react";
-import { AdminActionToast } from "@/components/features/AdminActionToast";
 import { AdminProductListControls } from "@/components/features/AdminProductListControls";
 import { createClient } from "@/lib/supabase/server";
 
@@ -64,15 +63,6 @@ export default async function AdminListPage({ searchParams }: AdminListPageProps
   const keyword = (params.search ?? "").trim();
   const selectedCategory = (params.category ?? "").trim();
   const selectedSort = params.sort ?? "created_desc";
-  const toastCode = params.toast;
-  const toastMessage =
-    toastCode === "created"
-      ? "제품이 등록되었습니다."
-      : toastCode === "updated"
-        ? "제품이 수정되었습니다."
-        : toastCode === "deleted"
-          ? "제품이 삭제되었습니다."
-          : null;
 
   const supabase = await createClient();
   const [{ data: categories }, productResult] = await Promise.all([
@@ -128,7 +118,6 @@ export default async function AdminListPage({ searchParams }: AdminListPageProps
 
   return (
     <main className="mx-auto w-full max-w-6xl p-6 pb-24">
-      {toastMessage && <AdminActionToast message={toastMessage} />}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold">제품 등록</h1>
         <Link

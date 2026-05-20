@@ -5,18 +5,20 @@ import { CheckCircle2, X } from "lucide-react";
 
 interface AdminActionToastProps {
   message: string;
+  onClose?: () => void;
 }
 
-export const AdminActionToast = ({ message }: AdminActionToastProps) => {
+export const AdminActionToast = ({ message, onClose }: AdminActionToastProps) => {
   const [open, setOpen] = useState(true);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setOpen(false);
+      onClose?.();
     }, 2500);
 
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [onClose]);
 
   if (!open) return null;
 
@@ -27,7 +29,10 @@ export const AdminActionToast = ({ message }: AdminActionToastProps) => {
       <button
         type="button"
         aria-label="토스트 닫기"
-        onClick={() => setOpen(false)}
+        onClick={() => {
+          setOpen(false);
+          onClose?.();
+        }}
         className="inline-flex items-center justify-center rounded p-0.5 hover:bg-emerald-500/20"
       >
         <X size={14} />

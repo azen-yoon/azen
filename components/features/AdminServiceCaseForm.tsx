@@ -51,12 +51,21 @@ export const AdminServiceCaseForm = ({
   const [additionalFileInputKeys, setAdditionalFileInputKeys] = useState([0]);
   const [additionalFileCaptions, setAdditionalFileCaptions] = useState<Record<number, string>>({});
   const [additionalFilePreviews, setAdditionalFilePreviews] = useState<Record<number, string>>({});
+  const [existingImageCaptionById, setExistingImageCaptionById] = useState<Record<string, string>>(() =>
+    Object.fromEntries(existingImages.map((image) => [image.id, image.caption ?? ""])),
+  );
   const previewUrlsRef = useRef<Record<number, string>>({});
 
   const listPath = "/admin/service";
   const pageTitle = mode === "create" ? "시공사례 등록" : "시공사례 수정";
   const submitLabel = mode === "create" ? "시공사례 저장" : "수정 저장";
   const currentThumbnailUrl = useMemo(() => initialCase?.thumbnail_url ?? "", [initialCase?.thumbnail_url]);
+
+  useEffect(() => {
+    setExistingImageCaptionById(
+      Object.fromEntries(existingImages.map((image) => [image.id, image.caption ?? ""])),
+    );
+  }, [existingImages]);
 
   useEffect(() => {
     previewUrlsRef.current = additionalFilePreviews;
@@ -147,6 +156,11 @@ export const AdminServiceCaseForm = ({
     setIsDirty(true);
   };
 
+  const updateExistingImageCaption = (imageId: string, value: string) => {
+    setExistingImageCaptionById((prev) => ({ ...prev, [imageId]: value }));
+    setIsDirty(true);
+  };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setImageUploadError(null);
@@ -154,6 +168,9 @@ export const AdminServiceCaseForm = ({
 
     try {
       let formData = new FormData(event.currentTarget);
+      if (mode === "edit" && existingImages.length > 0) {
+        formData.set("existing_image_captions_json", JSON.stringify(existingImageCaptionById));
+      }
       formData = await convertFormDataImagesToWebP(formData, ADMIN_IMAGE_UPLOAD_FIELDS);
       setIsDirty(false);
       startTransition(() => {
@@ -294,9 +311,14 @@ export const AdminServiceCaseForm = ({
                 <div key={image.id} className="flex items-center gap-3 rounded-md border border-border p-2">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={image.url} alt="기존 추가 이미지" className="h-16 w-16 rounded object-cover" />
-                  <div className="min-w-0 flex-1">
+                  <div className="min-w-0 flex-1 space-y-1">
                     <p className="line-clamp-1 text-xs text-muted-foreground">{image.url}</p>
-                    <p className="mt-1 text-sm text-foreground">{image.caption?.trim() || "캡션 없음"}</p>
+                    <input
+                      value={existingImageCaptionById[image.id] ?? ""}
+                      onChange={(event) => updateExistingImageCaption(image.id, event.target.value)}
+                      placeholder="이미지 캡션(선택)"
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                    />
                   </div>
                   {deleteImageAction && (
                     <AdminImageDeleteButton action={deleteImageAction} imageId={image.id} imageUrl={image.url} />

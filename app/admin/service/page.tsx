@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Plus, Wrench } from "lucide-react";
-import { AdminActionToast } from "@/components/features/AdminActionToast";
 import { createClient } from "@/lib/supabase/server";
 
 interface ServiceCaseListRow {
@@ -11,12 +10,6 @@ interface ServiceCaseListRow {
   created_at: string;
 }
 
-interface AdminServiceListPageProps {
-  searchParams: Promise<{
-    toast?: "created" | "updated" | "deleted";
-  }>;
-}
-
 const formatDate = (value: string) =>
   new Intl.DateTimeFormat("ko-KR", {
     year: "numeric",
@@ -24,17 +17,7 @@ const formatDate = (value: string) =>
     day: "2-digit",
   }).format(new Date(value));
 
-export default async function AdminServiceListPage({ searchParams }: AdminServiceListPageProps) {
-  const params = await searchParams;
-  const toastMessage =
-    params.toast === "created"
-      ? "시공사례가 등록되었습니다."
-      : params.toast === "updated"
-        ? "시공사례가 수정되었습니다."
-        : params.toast === "deleted"
-          ? "시공사례가 삭제되었습니다."
-          : null;
-
+export default async function AdminServiceListPage() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("azen_service_cases")
@@ -45,7 +28,6 @@ export default async function AdminServiceListPage({ searchParams }: AdminServic
 
   return (
     <main className="mx-auto w-full max-w-6xl p-6 pb-24">
-      {toastMessage && <AdminActionToast message={toastMessage} />}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold">시공사례 관리</h1>
         <Link

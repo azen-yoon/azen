@@ -60,3 +60,26 @@ export const collectStoragePathsFromUrls = (urls: Array<string | null | undefine
 
   return [...uniquePaths];
 };
+
+export const parseExistingServiceCaseImageCaptions = (
+  value: FormDataEntryValue | null,
+): Record<string, string> => {
+  if (typeof value !== "string" || !value.trim()) {
+    return {};
+  }
+
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return {};
+    }
+
+    return Object.fromEntries(
+      Object.entries(parsed as Record<string, unknown>)
+        .filter(([, caption]) => typeof caption === "string")
+        .map(([imageId, caption]) => [imageId, caption.trim()]),
+    );
+  } catch {
+    return {};
+  }
+};
