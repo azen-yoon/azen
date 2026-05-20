@@ -416,3 +416,6 @@
 - UX-003: 시공사례 모달 이미지 translateX 트랙 + `duration-300 ease-out` 슬라이드 전환 애니메이션
 - fix: 시공사례 모달 갤러리 트랙 width/slide % 명시·img block 레이아웃으로 이미지 미표시 복구
 - fix: 갤러리 ResizeObserver+px translate3d로 슬라이드 peek·레이아웃 깨짐 수정, nav z-20
+- UX-003: 모바일 갤러리 touch 이벤트 → scroll-snap-x mandatory + scroll-smooth, scroll 이벤트로 도트 연동
+- fix: scroll-snap 갤러리 absolute inset-0+img cover, 모달 h min(85dvh,calc(100dvh-2rem))로 하단 넘침·검은 여백 수정
+- Service Process 모바일 STEP 카드 2컬럼(좌: 아이콘+번호, 우: 타이틀+설명), md: 기존 세로 레이아웃 유지

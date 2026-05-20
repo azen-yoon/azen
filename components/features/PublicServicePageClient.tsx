@@ -45,10 +45,7 @@ const comparisonRows = [
 export const PublicServicePageClient = ({ cases }: PublicServicePageClientProps) => {
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
-  const touchStartXRef = useRef<number | null>(null);
-  const touchStartYRef = useRef<number | null>(null);
-  const slideViewportRef = useRef<HTMLDivElement>(null);
-  const [slideViewportWidth, setSlideViewportWidth] = useState(0);
+  const slideScrollRef = useRef<HTMLDivElement>(null);
 
   const selectedCase = useMemo(
     () => cases.find((serviceCase) => serviceCase.id === selectedCaseId) ?? null,
@@ -56,6 +53,26 @@ export const PublicServicePageClient = ({ cases }: PublicServicePageClientProps)
   );
   const selectedSlides = selectedCase?.slides ?? [];
   const currentSlide = selectedSlides[currentSlideIndex] ?? null;
+
+  const scrollToSlide = (index: number) => {
+    const container = slideScrollRef.current;
+    if (!container || container.clientWidth === 0) return;
+
+    container.scrollTo({
+      left: index * container.clientWidth,
+      behavior: "smooth",
+    });
+  };
+
+  const handleGalleryScroll = () => {
+    const container = slideScrollRef.current;
+    if (!container || container.clientWidth === 0) return;
+
+    const nextIndex = Math.round(container.scrollLeft / container.clientWidth);
+    const clampedIndex = Math.max(0, Math.min(selectedSlides.length - 1, nextIndex));
+
+    setCurrentSlideIndex((prev) => (prev === clampedIndex ? prev : clampedIndex));
+  };
 
   useEffect(() => {
     if (!selectedCase) return;
@@ -69,11 +86,11 @@ export const PublicServicePageClient = ({ cases }: PublicServicePageClientProps)
       if (selectedSlides.length <= 1) return;
 
       if (event.key === "ArrowLeft") {
-        setCurrentSlideIndex((prev) => (prev === 0 ? selectedSlides.length - 1 : prev - 1));
+        scrollToSlide(currentSlideIndex === 0 ? selectedSlides.length - 1 : currentSlideIndex - 1);
       }
 
       if (event.key === "ArrowRight") {
-        setCurrentSlideIndex((prev) => (prev === selectedSlides.length - 1 ? 0 : prev + 1));
+        scrollToSlide(currentSlideIndex === selectedSlides.length - 1 ? 0 : currentSlideIndex + 1);
       }
     };
 
@@ -85,26 +102,14 @@ export const PublicServicePageClient = ({ cases }: PublicServicePageClientProps)
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [selectedCase, selectedSlides.length]);
+  }, [selectedCase, selectedSlides.length, currentSlideIndex]);
 
   useLayoutEffect(() => {
-    if (!selectedCase) {
-      setSlideViewportWidth(0);
-      return;
-    }
+    const container = slideScrollRef.current;
+    if (!container || !selectedCase) return;
 
-    const viewport = slideViewportRef.current;
-    if (!viewport) return;
-
-    const updateWidth = () => {
-      setSlideViewportWidth(viewport.clientWidth);
-    };
-
-    updateWidth();
-    const observer = new ResizeObserver(updateWidth);
-    observer.observe(viewport);
-
-    return () => observer.disconnect();
+    container.scrollLeft = 0;
+    setCurrentSlideIndex(0);
   }, [selectedCase, selectedCaseId]);
 
   const openCaseModal = (serviceCaseId: string) => {
@@ -119,55 +124,12 @@ export const PublicServicePageClient = ({ cases }: PublicServicePageClientProps)
 
   const showPreviousSlide = () => {
     if (selectedSlides.length <= 1) return;
-    setCurrentSlideIndex((prev) => (prev === 0 ? selectedSlides.length - 1 : prev - 1));
+    scrollToSlide(currentSlideIndex === 0 ? selectedSlides.length - 1 : currentSlideIndex - 1);
   };
 
   const showNextSlide = () => {
     if (selectedSlides.length <= 1) return;
-    setCurrentSlideIndex((prev) => (prev === selectedSlides.length - 1 ? 0 : prev + 1));
-  };
-
-  const showPreviousSlideClamped = () => {
-    if (selectedSlides.length <= 1) return;
-    setCurrentSlideIndex((prev) => Math.max(0, prev - 1));
-  };
-
-  const showNextSlideClamped = () => {
-    if (selectedSlides.length <= 1) return;
-    setCurrentSlideIndex((prev) => Math.min(selectedSlides.length - 1, prev + 1));
-  };
-
-  const handleSlideTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
-    touchStartXRef.current = event.touches[0]?.clientX ?? null;
-    touchStartYRef.current = event.touches[0]?.clientY ?? null;
-  };
-
-  const handleSlideTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
-    if (touchStartXRef.current === null || touchStartYRef.current === null) return;
-
-    const touchEndX = event.changedTouches[0]?.clientX;
-    const touchEndY = event.changedTouches[0]?.clientY;
-    if (touchEndX === undefined || touchEndY === undefined) {
-      touchStartXRef.current = null;
-      touchStartYRef.current = null;
-      return;
-    }
-
-    const deltaX = touchEndX - touchStartXRef.current;
-    const deltaY = touchEndY - touchStartYRef.current;
-    touchStartXRef.current = null;
-    touchStartYRef.current = null;
-
-    if (Math.abs(deltaX) < 36 || Math.abs(deltaX) <= Math.abs(deltaY)) return;
-
-    event.stopPropagation();
-
-    if (deltaX > 0) {
-      showPreviousSlideClamped();
-      return;
-    }
-
-    showNextSlideClamped();
+    scrollToSlide(currentSlideIndex === selectedSlides.length - 1 ? 0 : currentSlideIndex + 1);
   };
 
   return (
@@ -213,16 +175,22 @@ export const PublicServicePageClient = ({ cases }: PublicServicePageClientProps)
                 return (
                   <article
                     key={step.title}
-                    className="glass-card relative flex min-h-[220px] flex-col items-center rounded-2xl border border-border bg-background px-5 py-6 text-center shadow-sm transition-transform duration-200 hover:-translate-y-1 md:px-6"
+                    className="glass-card relative flex min-h-0 flex-row items-center gap-4 rounded-2xl border border-border bg-background px-4 py-4 shadow-sm transition-transform duration-200 hover:-translate-y-1 md:min-h-[220px] md:flex-col md:items-center md:gap-0 md:px-6 md:py-6 md:text-center"
                   >
-                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-muted text-primary">
-                      <Icon className="h-6 w-6" aria-hidden />
+                    <div className="flex shrink-0 flex-col items-center">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-primary md:mx-auto md:h-14 md:w-14">
+                        <Icon className="h-5 w-5 md:h-6 md:w-6" aria-hidden />
+                      </div>
+                      <p className="mt-2 text-[10px] font-semibold tracking-[0.16em] text-muted-foreground md:mt-4 md:text-xs md:tracking-[0.18em]">
+                        STEP {index + 1}
+                      </p>
                     </div>
-                    <p className="mt-4 text-xs font-semibold tracking-[0.18em] text-muted-foreground">
-                      STEP {index + 1}
-                    </p>
-                    <h3 className="mt-2 text-lg font-semibold">{step.title}</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">{step.description}</p>
+                    <div className="min-w-0 flex-1 text-left md:text-center">
+                      <h3 className="text-lg font-bold leading-snug md:mt-2 md:text-lg md:font-semibold">
+                        {step.title}
+                      </h3>
+                      <p className="mt-1 text-xs text-muted-foreground md:text-sm">{step.description}</p>
+                    </div>
                   </article>
                 );
               })}
@@ -309,11 +277,11 @@ export const PublicServicePageClient = ({ cases }: PublicServicePageClientProps)
 
       {selectedCase && currentSlide && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 py-8"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
           onClick={closeCaseModal}
         >
           <div
-            className="relative flex h-[85dvh] max-h-[92dvh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-background shadow-2xl"
+            className="relative flex h-[min(85dvh,calc(100dvh-2rem))] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-background shadow-2xl"
             onClick={(event) => event.stopPropagation()}
           >
             <button
@@ -325,32 +293,22 @@ export const PublicServicePageClient = ({ cases }: PublicServicePageClientProps)
               <X className="h-5 w-5" />
             </button>
 
-            <div
-              ref={slideViewportRef}
-              className="relative min-h-0 flex-1 overflow-hidden rounded-t-3xl bg-black touch-pan-y"
-              onTouchStart={handleSlideTouchStart}
-              onTouchEnd={handleSlideTouchEnd}
-            >
+            <div className="relative min-h-0 flex-1 overflow-hidden rounded-t-3xl">
               <div
-                className="flex h-full transition-transform duration-300 ease-out will-change-transform"
-                style={{
-                  transform:
-                    slideViewportWidth > 0
-                      ? `translate3d(-${currentSlideIndex * slideViewportWidth}px, 0, 0)`
-                      : undefined,
-                }}
+                ref={slideScrollRef}
+                onScroll={handleGalleryScroll}
+                className="absolute inset-0 flex h-full w-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden scroll-smooth overscroll-x-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:snap-none md:overflow-x-hidden"
               >
                 {selectedSlides.map((slide, index) => (
                   <div
                     key={`${slide.url}-${index}`}
-                    className="relative h-full shrink-0 overflow-hidden"
-                    style={{ width: slideViewportWidth > 0 ? slideViewportWidth : "100%" }}
+                    className="relative h-full min-w-full shrink-0 snap-start snap-always"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={slide.url}
                       alt={selectedCase.title}
-                      className="h-full w-full object-cover"
+                      className="absolute inset-0 h-full w-full object-cover"
                     />
                   </div>
                 ))}
@@ -379,7 +337,7 @@ export const PublicServicePageClient = ({ cases }: PublicServicePageClientProps)
                       <button
                         key={`${slide.url}-${index}`}
                         type="button"
-                        onClick={() => setCurrentSlideIndex(index)}
+                        onClick={() => scrollToSlide(index)}
                         className={`pointer-events-auto rounded-full transition-all ${
                           index === currentSlideIndex ? "h-2.5 w-6 bg-white" : "h-2.5 w-2.5 bg-white/45"
                         }`}
