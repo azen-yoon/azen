@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BarChart3,
   ChevronLeft,
@@ -45,6 +45,8 @@ const comparisonRows = [
 export const PublicServicePageClient = ({ cases }: PublicServicePageClientProps) => {
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const touchStartXRef = useRef<number | null>(null);
+  const touchStartYRef = useRef<number | null>(null);
 
   const selectedCase = useMemo(
     () => cases.find((serviceCase) => serviceCase.id === selectedCaseId) ?? null,
@@ -101,6 +103,49 @@ export const PublicServicePageClient = ({ cases }: PublicServicePageClientProps)
   const showNextSlide = () => {
     if (selectedSlides.length <= 1) return;
     setCurrentSlideIndex((prev) => (prev === selectedSlides.length - 1 ? 0 : prev + 1));
+  };
+
+  const showPreviousSlideClamped = () => {
+    if (selectedSlides.length <= 1) return;
+    setCurrentSlideIndex((prev) => Math.max(0, prev - 1));
+  };
+
+  const showNextSlideClamped = () => {
+    if (selectedSlides.length <= 1) return;
+    setCurrentSlideIndex((prev) => Math.min(selectedSlides.length - 1, prev + 1));
+  };
+
+  const handleSlideTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    touchStartXRef.current = event.touches[0]?.clientX ?? null;
+    touchStartYRef.current = event.touches[0]?.clientY ?? null;
+  };
+
+  const handleSlideTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (touchStartXRef.current === null || touchStartYRef.current === null) return;
+
+    const touchEndX = event.changedTouches[0]?.clientX;
+    const touchEndY = event.changedTouches[0]?.clientY;
+    if (touchEndX === undefined || touchEndY === undefined) {
+      touchStartXRef.current = null;
+      touchStartYRef.current = null;
+      return;
+    }
+
+    const deltaX = touchEndX - touchStartXRef.current;
+    const deltaY = touchEndY - touchStartYRef.current;
+    touchStartXRef.current = null;
+    touchStartYRef.current = null;
+
+    if (Math.abs(deltaX) < 36 || Math.abs(deltaX) <= Math.abs(deltaY)) return;
+
+    event.stopPropagation();
+
+    if (deltaX > 0) {
+      showPreviousSlideClamped();
+      return;
+    }
+
+    showNextSlideClamped();
   };
 
   return (
@@ -246,34 +291,36 @@ export const PublicServicePageClient = ({ cases }: PublicServicePageClientProps)
           onClick={closeCaseModal}
         >
           <div
-            className="relative w-full max-w-5xl overflow-hidden rounded-3xl border border-white/10 bg-background shadow-2xl"
+            className="relative flex h-[85dvh] max-h-[92dvh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-background shadow-2xl"
             onClick={(event) => event.stopPropagation()}
           >
             <button
               type="button"
               onClick={closeCaseModal}
-              className="absolute right-4 top-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80"
+              className="absolute right-4 top-4 z-20 inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80"
               aria-label="모달 닫기"
             >
               <X className="h-5 w-5" />
             </button>
 
-            <div className="relative overflow-hidden rounded-t-3xl bg-black">
-              <div className="relative aspect-[4/3] overflow-hidden rounded-t-3xl">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={currentSlide.url}
-                  alt={selectedCase.title}
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
-              </div>
+            <div
+              className="relative min-h-0 flex-1 overflow-hidden rounded-t-3xl touch-pan-y"
+              onTouchStart={handleSlideTouchStart}
+              onTouchEnd={handleSlideTouchEnd}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={currentSlide.url}
+                alt={selectedCase.title}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
 
               {selectedSlides.length > 1 && (
                 <>
                   <button
                     type="button"
                     onClick={showPreviousSlide}
-                    className="absolute left-4 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80"
+                    className="absolute left-4 top-1/2 z-10 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80 md:inline-flex"
                     aria-label="이전 이미지"
                   >
                     <ChevronLeft className="h-6 w-6" />
@@ -281,23 +328,39 @@ export const PublicServicePageClient = ({ cases }: PublicServicePageClientProps)
                   <button
                     type="button"
                     onClick={showNextSlide}
-                    className="absolute right-4 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80"
+                    className="absolute right-4 top-1/2 z-10 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80 md:inline-flex"
                     aria-label="다음 이미지"
                   >
                     <ChevronRight className="h-6 w-6" />
                   </button>
+                  <div className="absolute inset-x-0 bottom-0 z-10 flex items-center justify-center gap-2 bg-gradient-to-t from-black/70 via-black/35 to-transparent px-4 pb-4 pt-10 md:hidden">
+                    {selectedSlides.map((slide, index) => (
+                      <button
+                        key={`${slide.url}-${index}`}
+                        type="button"
+                        onClick={() => setCurrentSlideIndex(index)}
+                        className={`rounded-full transition-all ${
+                          index === currentSlideIndex ? "h-2.5 w-6 bg-white" : "h-2.5 w-2.5 bg-white/45"
+                        }`}
+                        aria-label={`${index + 1}번째 이미지`}
+                        aria-current={index === currentSlideIndex ? "true" : undefined}
+                      />
+                    ))}
+                  </div>
                 </>
               )}
             </div>
 
-            <div className="flex flex-col gap-3 px-6 py-5 md:flex-row md:items-center md:justify-between">
+            <div className="flex shrink-0 flex-col gap-3 px-6 py-5 md:flex-row md:items-center md:justify-between">
               <div className="space-y-1">
                 <h3 className="text-xl font-semibold text-foreground">{selectedCase.title}</h3>
                 {currentSlide.caption ? <p className="text-sm text-muted-foreground">{currentSlide.caption}</p> : null}
               </div>
-              <p className="text-sm font-medium text-muted-foreground">
-                {currentSlideIndex + 1} / {selectedSlides.length}
-              </p>
+              {selectedSlides.length > 1 ? (
+                <p className="hidden text-sm font-medium text-muted-foreground md:block">
+                  {currentSlideIndex + 1} / {selectedSlides.length}
+                </p>
+              ) : null}
             </div>
           </div>
         </div>
