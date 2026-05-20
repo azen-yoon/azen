@@ -4,6 +4,12 @@ import { useActionState, useState, useTransition } from "react";
 import { FileText, ImagePlus, Link as LinkIcon, Plus, Save, Trash2, Upload, Wrench } from "lucide-react";
 import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { CATALOG_SUB_LABEL_FALLBACK, WATER_SUB_SLUGS } from "@/lib/products-catalog";
+import {
+  ADMIN_IMAGE_ACCEPT,
+  ADMIN_IMAGE_UPLOAD_FIELDS,
+  convertFormDataImagesToWebP,
+  UnsupportedImageTypeError,
+} from "@/lib/image-webp";
 
 interface CategoryOption {
   id: string;
@@ -98,6 +104,8 @@ export const AdminProductCreateForm = ({ categories, action }: AdminProductCreat
   const [additionalMode, setAdditionalMode] = useState<"file" | "url">("file");
   const [additionalUrlInputs, setAdditionalUrlInputs] = useState([""]);
   const [additionalFileInputKeys, setAdditionalFileInputKeys] = useState([0]);
+  const [isConvertingImages, setIsConvertingImages] = useState(false);
+  const [imageUploadError, setImageUploadError] = useState<string | null>(null);
 
   const addSpecItem = () => {
     setSpecItems((prev) => (prev.length >= MAX_SPEC_ITEMS ? prev : [...prev, createEmptySpecItem()]));
@@ -145,14 +153,28 @@ export const AdminProductCreateForm = ({ categories, action }: AdminProductCreat
     setAdditionalFileInputKeys((prev) => (prev.length === 1 ? prev : prev.filter((item) => item !== key)));
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const description = String(formData.get("description") ?? "");
-    formData.set("description", normalizeDescriptionForSave(description));
-    startTransition(() => {
-      formAction(formData);
-    });
+    setImageUploadError(null);
+    setIsConvertingImages(true);
+
+    try {
+      let formData = new FormData(event.currentTarget);
+      formData = await convertFormDataImagesToWebP(formData, ADMIN_IMAGE_UPLOAD_FIELDS);
+      const description = String(formData.get("description") ?? "");
+      formData.set("description", normalizeDescriptionForSave(description));
+      startTransition(() => {
+        formAction(formData);
+      });
+    } catch (error) {
+      setImageUploadError(
+        error instanceof UnsupportedImageTypeError || error instanceof Error
+          ? error.message
+          : "이미지 변환에 실패했습니다.",
+      );
+    } finally {
+      setIsConvertingImages(false);
+    }
   };
 
   return (
@@ -314,7 +336,7 @@ export const AdminProductCreateForm = ({ categories, action }: AdminProductCreat
           <input
             type="file"
             name="thumbnail_file"
-            accept="image/*"
+            accept={ADMIN_IMAGE_ACCEPT}
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
           />
         ) : (
@@ -358,7 +380,7 @@ export const AdminProductCreateForm = ({ categories, action }: AdminProductCreat
                 <input
                   type="file"
                   name="additional_image_files"
-                  accept="image/*"
+                  accept={ADMIN_IMAGE_ACCEPT}
                   className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
                 />
                 <button
@@ -452,14 +474,15 @@ export const AdminProductCreateForm = ({ categories, action }: AdminProductCreat
       )}
 
       {state.error && <p className="text-sm text-red-500">{state.error}</p>}
+      {imageUploadError && <p className="text-sm text-red-500">{imageUploadError}</p>}
 
       <button
         type="submit"
-        disabled={isPending}
+        disabled={isPending || isConvertingImages}
         className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
       >
         <Save size={15} />
-        {isPending ? "저장 중..." : "제품 저장"}
+        {isConvertingImages ? "이미지 변환 중..." : isPending ? "저장 중..." : "제품 저장"}
       </button>
     </form>
   );

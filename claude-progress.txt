@@ -400,3 +400,4 @@
 - `ProductsCatalogClient.tsx` 수처리 탭 DEPTH/CARBON/PLEATED 카드 → `/products/water/depth|carbon|pleated` Link 추가
 - `products/water/[sub]/page.tsx` 히어로 제거·제품 상세형 타이틀 바(뒤로가기+브레드크럼), 이미지 w-80 h-60, description `dangerouslySetInnerHTML`
 - `ProductsCatalogClient.tsx` 수처리 서브카테고리 카드: 서버 products prop 기준 첫 제품 썸네일 배경 이미지 카드(DEPTH/CARBON/PLEATED, hover 오버레이)
+- ADMIN-010: `lib/image-webp.ts` Canvas WebP 변환, 제품·시공사례 폼 submit 시 변환 적용, `next.config.ts` serverActions bodySizeLimit 10MB

@@ -1,11 +1,17 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ImagePlus, Link as LinkIcon, Save, Trash2, Upload } from "lucide-react";
 import { AdminImageDeleteButton } from "@/components/features/AdminImageDeleteButton";
 import { AdminServiceCaseDeleteButton } from "@/components/features/AdminServiceCaseDeleteButton";
 import type { ServiceCaseDetail, ServiceCaseImageRow } from "@/lib/admin-service-cases";
+import {
+  ADMIN_IMAGE_ACCEPT,
+  ADMIN_IMAGE_UPLOAD_FIELDS,
+  convertFormDataImagesToWebP,
+  UnsupportedImageTypeError,
+} from "@/lib/image-webp";
 
 interface ServiceCaseFormState {
   error: string | null;
@@ -34,18 +40,33 @@ export const AdminServiceCaseForm = ({
   deleteCaseAction,
 }: AdminServiceCaseFormProps) => {
   const router = useRouter();
-  const [state, formAction, isPending] = useActionState(action, { error: null });
+  const [state, formAction] = useActionState(action, { error: null });
+  const [isPending, startTransition] = useTransition();
   const [isDirty, setIsDirty] = useState(false);
+  const [isConvertingImages, setIsConvertingImages] = useState(false);
+  const [imageUploadError, setImageUploadError] = useState<string | null>(null);
   const [thumbnailMode, setThumbnailMode] = useState<"file" | "url">("file");
   const [additionalMode, setAdditionalMode] = useState<"file" | "url">("file");
   const [additionalUrlInputs, setAdditionalUrlInputs] = useState<UrlInputItem[]>([{ url: "", caption: "" }]);
-  const [selectedAdditionalFiles, setSelectedAdditionalFiles] = useState<string[]>([]);
-  const [selectedAdditionalFileCaptions, setSelectedAdditionalFileCaptions] = useState<string[]>([]);
+  const [additionalFileInputKeys, setAdditionalFileInputKeys] = useState([0]);
+  const [additionalFileCaptions, setAdditionalFileCaptions] = useState<Record<number, string>>({});
+  const [additionalFilePreviews, setAdditionalFilePreviews] = useState<Record<number, string>>({});
+  const previewUrlsRef = useRef<Record<number, string>>({});
 
   const listPath = "/admin/service";
   const pageTitle = mode === "create" ? "시공사례 등록" : "시공사례 수정";
   const submitLabel = mode === "create" ? "시공사례 저장" : "수정 저장";
   const currentThumbnailUrl = useMemo(() => initialCase?.thumbnail_url ?? "", [initialCase?.thumbnail_url]);
+
+  useEffect(() => {
+    previewUrlsRef.current = additionalFilePreviews;
+  }, [additionalFilePreviews]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(previewUrlsRef.current).forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, []);
 
   const handleBackClick = () => {
     if (isDirty) {
@@ -60,6 +81,7 @@ export const AdminServiceCaseForm = ({
 
   const addAdditionalUrlInput = () => {
     setAdditionalUrlInputs((prev) => [...prev, { url: "", caption: "" }]);
+    setIsDirty(true);
   };
 
   const updateAdditionalUrlInput = (index: number, key: keyof UrlInputItem, value: string) => {
@@ -74,21 +96,85 @@ export const AdminServiceCaseForm = ({
     setIsDirty(true);
   };
 
-  const handleAdditionalFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const names = Array.from(event.target.files ?? []).map((file) => file.name);
-    setSelectedAdditionalFiles(names);
-    setSelectedAdditionalFileCaptions((prev) => names.map((_, index) => prev[index] ?? ""));
+  const addAdditionalFileInput = () => {
+    setAdditionalFileInputKeys((prev) => [...prev, prev.length > 0 ? Math.max(...prev) + 1 : 0]);
     setIsDirty(true);
   };
 
-  const updateAdditionalFileCaption = (index: number, value: string) => {
-    setSelectedAdditionalFileCaptions((prev) => prev.map((item, idx) => (idx === index ? value : item)));
+  const revokePreview = (key: number) => {
+    const previewUrl = additionalFilePreviews[key];
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+  };
+
+  const removeAdditionalFileInput = (key: number) => {
+    revokePreview(key);
+    setAdditionalFileInputKeys((prev) => (prev.length === 1 ? prev : prev.filter((item) => item !== key)));
+    setAdditionalFileCaptions((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+    setAdditionalFilePreviews((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
     setIsDirty(true);
   };
+
+  const handleAdditionalFileChange = (key: number, file: File | undefined) => {
+    revokePreview(key);
+
+    if (!file) {
+      setAdditionalFilePreviews((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+      setIsDirty(true);
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    setAdditionalFilePreviews((prev) => ({ ...prev, [key]: previewUrl }));
+    setIsDirty(true);
+  };
+
+  const updateAdditionalFileCaption = (key: number, value: string) => {
+    setAdditionalFileCaptions((prev) => ({ ...prev, [key]: value }));
+    setIsDirty(true);
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setImageUploadError(null);
+    setIsConvertingImages(true);
+
+    try {
+      let formData = new FormData(event.currentTarget);
+      formData = await convertFormDataImagesToWebP(formData, ADMIN_IMAGE_UPLOAD_FIELDS);
+      setIsDirty(false);
+      startTransition(() => {
+        formAction(formData);
+      });
+    } catch (error) {
+      setImageUploadError(
+        error instanceof UnsupportedImageTypeError || error instanceof Error
+          ? error.message
+          : "이미지 변환에 실패했습니다.",
+      );
+    } finally {
+      setIsConvertingImages(false);
+    }
+  };
+
+  const isSaving = isPending || isConvertingImages;
 
   return (
     <form
-      action={formAction}
+      onSubmit={handleSubmit}
       onChange={() => setIsDirty(true)}
       className="glass-card space-y-5 rounded-2xl border border-border p-5"
     >
@@ -175,7 +261,7 @@ export const AdminServiceCaseForm = ({
           <input
             type="file"
             name="thumbnail_file"
-            accept="image/*"
+            accept={ADMIN_IMAGE_ACCEPT}
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
           />
         ) : (
@@ -248,36 +334,57 @@ export const AdminServiceCaseForm = ({
         </div>
         <input type="hidden" name="additional_mode" value={additionalMode} />
         {additionalMode === "file" ? (
-          <div className="space-y-3">
-            <input
-              type="file"
-              name="additional_image_files"
-              accept="image/*"
-              multiple
-              onChange={handleAdditionalFileChange}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
-            />
-            {selectedAdditionalFiles.length > 0 && (
-              <div className="space-y-2">
-                {selectedAdditionalFiles.map((filename, index) => (
-                  <div key={`${filename}-${index}`} className="rounded-md border border-border p-3">
-                    <p className="text-sm font-medium text-foreground">{filename}</p>
+          <div className="space-y-2">
+            {additionalFileInputKeys.map((key) => (
+              <div key={`additional-file-${key}`} className="space-y-2 rounded-md border border-border p-3">
+                <div className="flex gap-2">
+                  <input
+                    type="file"
+                    name="additional_image_files"
+                    accept={ADMIN_IMAGE_ACCEPT}
+                    onChange={(event) => handleAdditionalFileChange(key, event.target.files?.[0])}
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeAdditionalFileInput(key)}
+                    className="inline-flex items-center justify-center rounded-md border border-border px-3 py-2 text-xs hover:bg-muted"
+                    aria-label="추가 이미지 파일 선택칸 삭제"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+                {additionalFilePreviews[key] ? (
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={additionalFilePreviews[key]}
+                      alt="선택한 추가 이미지 미리보기"
+                      className="h-16 w-16 rounded object-cover"
+                    />
                     <input
                       name="additional_image_captions"
-                      value={selectedAdditionalFileCaptions[index] ?? ""}
-                      onChange={(event) => updateAdditionalFileCaption(index, event.target.value)}
+                      value={additionalFileCaptions[key] ?? ""}
+                      onChange={(event) => updateAdditionalFileCaption(key, event.target.value)}
                       placeholder="이미지 캡션(선택)"
-                      className="mt-2 w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
                     />
-                  </div>
-                ))}
+                  </>
+                ) : null}
               </div>
-            )}
+            ))}
+            <button
+              type="button"
+              onClick={addAdditionalFileInput}
+              className="rounded-md border border-border px-3 py-2 text-xs hover:bg-muted"
+            >
+              파일 추가
+            </button>
           </div>
         ) : (
           <div className="space-y-2">
             {additionalUrlInputs.map((item, index) => (
-              <div key={`additional-url-${index}`} className="rounded-md border border-border p-3">
+              <div key={`additional-url-${index}`} className="space-y-2 rounded-md border border-border p-3">
                 <div className="flex gap-2">
                   <input
                     name="additional_image_urls"
@@ -300,7 +407,7 @@ export const AdminServiceCaseForm = ({
                   value={item.caption}
                   onChange={(event) => updateAdditionalUrlInput(index, "caption", event.target.value)}
                   placeholder="이미지 캡션(선택)"
-                  className="mt-2 w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
                 />
               </div>
             ))}
@@ -316,15 +423,16 @@ export const AdminServiceCaseForm = ({
       </section>
 
       {state.error && <p className="text-sm text-red-500">{state.error}</p>}
+      {imageUploadError && <p className="text-sm text-red-500">{imageUploadError}</p>}
 
       <div className="flex flex-wrap items-center justify-center gap-2">
         <button
           type="submit"
-          disabled={isPending}
+          disabled={isSaving}
           className="inline-flex w-36 items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
         >
           <Save size={15} />
-          {isPending ? "저장 중..." : submitLabel}
+          {isConvertingImages ? "이미지 변환 중..." : isPending ? "저장 중..." : submitLabel}
         </button>
         {mode === "edit" && initialCase && deleteCaseAction && (
           <AdminServiceCaseDeleteButton

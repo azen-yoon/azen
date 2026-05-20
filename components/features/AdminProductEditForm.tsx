@@ -18,6 +18,12 @@ import { AdminImageDeleteButton } from "@/components/features/AdminImageDeleteBu
 import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { createClient } from "@/lib/supabase/client";
 import { CATALOG_SUB_LABEL_FALLBACK, WATER_SUB_SLUGS } from "@/lib/products-catalog";
+import {
+  ADMIN_IMAGE_ACCEPT,
+  ADMIN_IMAGE_UPLOAD_FIELDS,
+  convertFormDataImagesToWebP,
+  UnsupportedImageTypeError,
+} from "@/lib/image-webp";
 
 interface CategoryOption {
   id: string;
@@ -189,6 +195,7 @@ export const AdminProductEditForm = ({
   const [thumbnailPreviewUrl, setThumbnailPreviewUrl] = useState<string | null>(null);
   const [thumbnailUploadError, setThumbnailUploadError] = useState<string | null>(null);
   const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
+  const [isConvertingImages, setIsConvertingImages] = useState(false);
   const [additionalMode, setAdditionalMode] = useState<"file" | "url">("file");
   const [additionalUrlInputs, setAdditionalUrlInputs] = useState([""]);
   const [additionalFileInputKeys, setAdditionalFileInputKeys] = useState([0]);
@@ -294,40 +301,52 @@ export const AdminProductEditForm = ({
   const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setThumbnailUploadError(null);
+    setIsConvertingImages(true);
 
-    const formData = new FormData(event.currentTarget);
+    try {
+      let formData = new FormData(event.currentTarget);
+      formData = await convertFormDataImagesToWebP(formData, ADMIN_IMAGE_UPLOAD_FIELDS);
 
-    if (thumbnailMode === "file") {
-      const thumbnailFile = formData.get("thumbnail_file");
-      formData.delete("thumbnail_file");
+      if (thumbnailMode === "file") {
+        const thumbnailFile = formData.get("thumbnail_file");
+        formData.delete("thumbnail_file");
 
-      if (thumbnailFile instanceof File && thumbnailFile.size > 0) {
-        setIsUploadingThumbnail(true);
-        try {
-          const uploadedUrl = await uploadThumbnailToStorage(product.id, thumbnailFile);
-          formData.set("thumbnail_mode", "url");
-          formData.set("thumbnail_url", uploadedUrl);
-        } catch (error) {
-          setThumbnailUploadError(
-            error instanceof Error ? error.message : "대표 이미지 업로드에 실패했습니다.",
-          );
-          setIsUploadingThumbnail(false);
-          return;
+        if (thumbnailFile instanceof File && thumbnailFile.size > 0) {
+          setIsUploadingThumbnail(true);
+          try {
+            const uploadedUrl = await uploadThumbnailToStorage(product.id, thumbnailFile);
+            formData.set("thumbnail_mode", "url");
+            formData.set("thumbnail_url", uploadedUrl);
+          } catch (error) {
+            setThumbnailUploadError(
+              error instanceof Error ? error.message : "대표 이미지 업로드에 실패했습니다.",
+            );
+            return;
+          } finally {
+            setIsUploadingThumbnail(false);
+          }
         }
-        setIsUploadingThumbnail(false);
       }
+
+      const description = String(formData.get("description") ?? "");
+      formData.set("description", normalizeDescriptionForSave(description));
+
+      setIsDirty(false);
+      startTransition(() => {
+        formAction(formData);
+      });
+    } catch (error) {
+      setThumbnailUploadError(
+        error instanceof UnsupportedImageTypeError || error instanceof Error
+          ? error.message
+          : "이미지 변환에 실패했습니다.",
+      );
+    } finally {
+      setIsConvertingImages(false);
     }
-
-    const description = String(formData.get("description") ?? "");
-    formData.set("description", normalizeDescriptionForSave(description));
-
-    setIsDirty(false);
-    startTransition(() => {
-      formAction(formData);
-    });
   };
 
-  const isSaving = isPending || isUploadingThumbnail;
+  const isSaving = isPending || isUploadingThumbnail || isConvertingImages;
 
   return (
     <form
@@ -523,7 +542,7 @@ export const AdminProductEditForm = ({
             <input
               type="file"
               name="thumbnail_file"
-              accept="image/*"
+              accept={ADMIN_IMAGE_ACCEPT}
               onChange={handleThumbnailFileChange}
               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
             />
@@ -592,7 +611,7 @@ export const AdminProductEditForm = ({
                 <input
                   type="file"
                   name="additional_image_files"
-                  accept="image/*"
+                  accept={ADMIN_IMAGE_ACCEPT}
                   className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
                 />
                 <button
@@ -701,7 +720,7 @@ export const AdminProductEditForm = ({
           className="inline-flex w-36 items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
         >
           <Save size={15} />
-          {isSaving ? "저장 중..." : "수정 저장"}
+          {isConvertingImages ? "이미지 변환 중..." : isSaving ? "저장 중..." : "수정 저장"}
         </button>
         <AdminDeleteButton action={deleteProductAction} productId={product.id} productName={product.name}>
           제품 삭제
