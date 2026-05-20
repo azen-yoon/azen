@@ -102,7 +102,7 @@ export const deleteManagedAdditionalImage = async ({
   if (storagePath) {
     const { error: storageError } = await removeStoragePaths(supabase, [storagePath], bucket);
     if (storageError) {
-      return { error: `Storage 파일 삭제에 실패했습니다: ${storageError.message}` };
+      return { error: `Storage 파일 삭제에 실패했습니다: ${storageError}` };
     }
   }
 

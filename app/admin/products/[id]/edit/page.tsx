@@ -8,6 +8,7 @@ import {
   removeReplacedThumbnailFromStorage,
   removeStoragePaths,
 } from "@/lib/admin-storage";
+import { createStoragePath, isValidUrl } from "@/lib/admin-service-cases";
 import { createClient } from "@/lib/supabase/server";
 
 interface AdminProductEditPageProps {
@@ -39,20 +40,6 @@ const categoryOrderKeywords = ["공조기", "수처리", "집진기", "기타 �
 const getCategoryOrderIndex = (name: string) => {
   const matchedIndex = categoryOrderKeywords.findIndex((keyword) => name.includes(keyword));
   return matchedIndex === -1 ? Number.MAX_SAFE_INTEGER : matchedIndex;
-};
-
-const isValidUrl = (value: string) => {
-  try {
-    const parsed = new URL(value);
-    return parsed.protocol === "http:" || parsed.protocol === "https:";
-  } catch {
-    return false;
-  }
-};
-
-const createStoragePath = (folder: string, filename: string, order = 0) => {
-  const ext = filename.split(".").pop()?.toLowerCase() ?? "jpg";
-  return `${folder}/${Date.now()}-${order}.${ext}`;
 };
 
 const parseSpecItems = (value: FormDataEntryValue | null): ProductSpecItem[] => {

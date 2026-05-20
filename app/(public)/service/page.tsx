@@ -31,7 +31,7 @@ interface ServiceCaseRow {
 
 export default async function ServicePage() {
   const supabase = createStaticClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("azen_service_cases")
     .select(
       "id, title, thumbnail_url, thumbnail_caption, sort_order, created_at, images:azen_service_case_images(id, url, caption, sort_order)",
@@ -39,6 +39,10 @@ export default async function ServicePage() {
     .eq("is_published", true)
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("[ServicePage] azen_service_cases 조회 실패:", error.message);
+  }
 
   const cases = ((data ?? []) as ServiceCaseRow[]).map((serviceCase) => {
     const additionalSlides = (serviceCase.images ?? [])
