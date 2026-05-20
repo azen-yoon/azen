@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 interface ProductCard {
   id: string;
@@ -19,7 +19,10 @@ interface HomeProductsCarouselProps {
 export const HomeProductsCarousel = ({ cards }: HomeProductsCarouselProps) => {
   const [startIndex, setStartIndex] = useState(0);
   const [itemsPerView, setItemsPerView] = useState(3);
-  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const touchStartXRef = useRef<number | null>(null);
+  const touchStartYRef = useRef<number | null>(null);
+  const isHorizontalSwipeRef = useRef(false);
   const isLoopEnabled = cards.length > itemsPerView;
 
   useEffect(() => {
@@ -58,19 +61,60 @@ export const HomeProductsCarousel = ({ cards }: HomeProductsCarouselProps) => {
   };
 
   const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
-    setTouchStartX(event.changedTouches[0].clientX);
+    touchStartXRef.current = event.touches[0]?.clientX ?? null;
+    touchStartYRef.current = event.touches[0]?.clientY ?? null;
+    isHorizontalSwipeRef.current = false;
   };
 
   const handleTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
-    const endX = event.changedTouches[0].clientX;
-    if (touchStartX === null) return;
+    const endX = event.changedTouches[0]?.clientX;
+    const wasHorizontalSwipe = isHorizontalSwipeRef.current;
 
-    const deltaX = touchStartX - endX;
+    if (endX === undefined || touchStartXRef.current === null) {
+      touchStartXRef.current = null;
+      touchStartYRef.current = null;
+      isHorizontalSwipeRef.current = false;
+      return;
+    }
+
+    const deltaX = touchStartXRef.current - endX;
+    touchStartXRef.current = null;
+    touchStartYRef.current = null;
+    isHorizontalSwipeRef.current = false;
+
+    if (!wasHorizontalSwipe) return;
+
     const swipeThreshold = 40;
-
     if (deltaX > swipeThreshold) moveCarousel("next");
     if (deltaX < -swipeThreshold) moveCarousel("prev");
   };
+
+  useEffect(() => {
+    const node = carouselRef.current;
+    if (!node) return;
+
+    const handleTouchMove = (event: TouchEvent) => {
+      if (touchStartXRef.current === null || touchStartYRef.current === null) return;
+
+      const touch = event.touches[0];
+      if (!touch) return;
+
+      const deltaX = touch.clientX - touchStartXRef.current;
+      const deltaY = touch.clientY - touchStartYRef.current;
+
+      if (!isHorizontalSwipeRef.current) {
+        if (Math.abs(deltaX) < 8 && Math.abs(deltaY) < 8) return;
+        isHorizontalSwipeRef.current = Math.abs(deltaX) > Math.abs(deltaY);
+      }
+
+      if (isHorizontalSwipeRef.current) {
+        event.preventDefault();
+      }
+    };
+
+    node.addEventListener("touchmove", handleTouchMove, { passive: false });
+    return () => node.removeEventListener("touchmove", handleTouchMove);
+  }, []);
 
   if (cards.length === 0) {
     return (
@@ -105,7 +149,12 @@ export const HomeProductsCarousel = ({ cards }: HomeProductsCarouselProps) => {
           </button>
         </div>
       </div>
-      <div className="overflow-hidden" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+      <div
+        ref={carouselRef}
+        className="touch-pan-y overflow-hidden"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         <div
           className="flex gap-4 transition-transform duration-700 ease-out"
           style={{

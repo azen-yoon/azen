@@ -419,3 +419,4 @@
 - UX-003: 모바일 갤러리 touch 이벤트 → scroll-snap-x mandatory + scroll-smooth, scroll 이벤트로 도트 연동
 - fix: scroll-snap 갤러리 absolute inset-0+img cover, 모달 h min(85dvh,calc(100dvh-2rem))로 하단 넘침·검은 여백 수정
 - Service Process 모바일 STEP 카드 2컬럼(좌: 아이콘+번호, 우: 타이틀+설명), md: 기존 세로 레이아웃 유지
+- HomeProductsCarousel: touch+translateX 방식 확인, 가로 스와이프 시 touchmove preventDefault로 세로 스크롤 간섭 수정
