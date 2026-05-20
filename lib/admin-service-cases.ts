@@ -51,7 +51,7 @@ export const parseExistingServiceCaseImageCaptions = (
 
     return Object.fromEntries(
       Object.entries(parsed as Record<string, unknown>)
-        .filter(([, caption]) => typeof caption === "string")
+        .filter((entry): entry is [string, string] => typeof entry[1] === "string")
         .map(([imageId, caption]) => [imageId, caption.trim()]),
     );
   } catch {
