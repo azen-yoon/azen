@@ -11,5 +11,5 @@
       "페이지 새로고침 후 선택한 테마 유지 확인 (localStorage)",
       "모바일(375px), 태블릿(768px), 데스크탑(1280px) 레이아웃 확인"
     ],
-    "passes": true
+    "passes": false
   }
