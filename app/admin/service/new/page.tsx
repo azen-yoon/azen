@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { AdminServiceCaseForm } from "@/components/features/AdminServiceCaseForm";
 import { createStoragePath, isValidUrl, SERVICE_CASE_IMAGE_BUCKET } from "@/lib/admin-service-cases";
 import { createClient } from "@/lib/supabase/server";
@@ -120,6 +121,8 @@ export default async function AdminServiceNewPage() {
       }
     }
 
+    revalidatePath("/service");
+    revalidatePath("/admin/service");
     redirect("/admin/service?toast=created");
   };
 

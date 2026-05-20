@@ -213,6 +213,8 @@ export default async function AdminServiceEditPage({ params }: AdminServiceEditP
       }
     }
 
+    revalidatePath("/service");
+    revalidatePath("/admin/service");
     revalidatePath(`/admin/service/${id}/edit`);
     redirect(`/admin/service/${id}/edit?toast=updated`);
   };
@@ -239,6 +241,7 @@ export default async function AdminServiceEditPage({ params }: AdminServiceEditP
       return result;
     }
 
+    revalidatePath("/service");
     revalidatePath(`/admin/service/${id}/edit`);
     return { error: null };
   };
@@ -282,6 +285,8 @@ export default async function AdminServiceEditPage({ params }: AdminServiceEditP
       throw new Error(`시공사례 DB 삭제에 실패했습니다: ${caseDeleteError.message}`);
     }
 
+    revalidatePath("/service");
+    revalidatePath("/admin/service");
     redirect("/admin/service?toast=deleted");
   };
 

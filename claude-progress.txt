@@ -405,6 +405,7 @@
 - ADMIN-011: 시공사례 수정 폼 기존 추가 이미지 캡션 인라인 input + 저장 시 `azen_service_case_images.caption` 업데이트
 - ADMIN-011 fix: 캡션 필드명을 `existing_image_caption_{id}`로 변경(Server Action FormData 다중값 누락 방지), 저장 후 edit 페이지 revalidate
 - ADMIN-011 fix2: 캡션을 `existing_image_captions_json`으로 명시 전송(controlled state), UPDATE RLS 누락 시 에러 표시, `supabase/admin-011-service-case-images-update-rls.sql` 추가
+- fix: 시공사례 관리자 수정·등록·삭제·이미지삭제 시 `/service` revalidatePath 추가 (ISR 300초 캐시 미반영 해결, 재적용)
 - 관리자 layout에 `AdminSearchParamsToast` 추가 — 저장/등록/삭제 후 `?toast=` URL 기반 우하단 토스트 전역 표시
 - `lib/admin-storage.ts` 추가: Storage 삭제 유틸 + `deleteManagedAdditionalImage`, 제품·시공사례 추가 이미지/대표 이미지 교체/전체 삭제 시 DB+Storage 동시 삭제 및 에러 처리
 - feedback.md 반영: `admin-storage.ts` Storage 에러 `${storageError}` 수정, `service/page.tsx` DB 조회 error 로그, 제품 admin new/edit `isValidUrl`·`createStoragePath` lib import 통합
