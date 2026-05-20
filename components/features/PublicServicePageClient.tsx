@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   BarChart3,
   ChevronLeft,
@@ -47,6 +47,8 @@ export const PublicServicePageClient = ({ cases }: PublicServicePageClientProps)
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const touchStartXRef = useRef<number | null>(null);
   const touchStartYRef = useRef<number | null>(null);
+  const slideViewportRef = useRef<HTMLDivElement>(null);
+  const [slideViewportWidth, setSlideViewportWidth] = useState(0);
 
   const selectedCase = useMemo(
     () => cases.find((serviceCase) => serviceCase.id === selectedCaseId) ?? null,
@@ -84,6 +86,26 @@ export const PublicServicePageClient = ({ cases }: PublicServicePageClientProps)
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [selectedCase, selectedSlides.length]);
+
+  useLayoutEffect(() => {
+    if (!selectedCase) {
+      setSlideViewportWidth(0);
+      return;
+    }
+
+    const viewport = slideViewportRef.current;
+    if (!viewport) return;
+
+    const updateWidth = () => {
+      setSlideViewportWidth(viewport.clientWidth);
+    };
+
+    updateWidth();
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(viewport);
+
+    return () => observer.disconnect();
+  }, [selectedCase, selectedCaseId]);
 
   const openCaseModal = (serviceCaseId: string) => {
     setSelectedCaseId(serviceCaseId);
@@ -304,23 +326,42 @@ export const PublicServicePageClient = ({ cases }: PublicServicePageClientProps)
             </button>
 
             <div
-              className="relative min-h-0 flex-1 overflow-hidden rounded-t-3xl touch-pan-y"
+              ref={slideViewportRef}
+              className="relative min-h-0 flex-1 overflow-hidden rounded-t-3xl bg-black touch-pan-y"
               onTouchStart={handleSlideTouchStart}
               onTouchEnd={handleSlideTouchEnd}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={currentSlide.url}
-                alt={selectedCase.title}
-                className="absolute inset-0 h-full w-full object-cover"
-              />
+              <div
+                className="flex h-full transition-transform duration-300 ease-out will-change-transform"
+                style={{
+                  transform:
+                    slideViewportWidth > 0
+                      ? `translate3d(-${currentSlideIndex * slideViewportWidth}px, 0, 0)`
+                      : undefined,
+                }}
+              >
+                {selectedSlides.map((slide, index) => (
+                  <div
+                    key={`${slide.url}-${index}`}
+                    className="relative h-full shrink-0 overflow-hidden"
+                    style={{ width: slideViewportWidth > 0 ? slideViewportWidth : "100%" }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={slide.url}
+                      alt={selectedCase.title}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
 
               {selectedSlides.length > 1 && (
                 <>
                   <button
                     type="button"
                     onClick={showPreviousSlide}
-                    className="absolute left-4 top-1/2 z-10 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80 md:inline-flex"
+                    className="absolute left-4 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80 md:inline-flex"
                     aria-label="이전 이미지"
                   >
                     <ChevronLeft className="h-6 w-6" />
@@ -328,18 +369,18 @@ export const PublicServicePageClient = ({ cases }: PublicServicePageClientProps)
                   <button
                     type="button"
                     onClick={showNextSlide}
-                    className="absolute right-4 top-1/2 z-10 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80 md:inline-flex"
+                    className="absolute right-4 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80 md:inline-flex"
                     aria-label="다음 이미지"
                   >
                     <ChevronRight className="h-6 w-6" />
                   </button>
-                  <div className="absolute inset-x-0 bottom-0 z-10 flex items-center justify-center gap-2 bg-gradient-to-t from-black/70 via-black/35 to-transparent px-4 pb-4 pt-10 md:hidden">
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex items-center justify-center gap-2 bg-gradient-to-t from-black/70 via-black/35 to-transparent px-4 pb-4 pt-10 md:hidden">
                     {selectedSlides.map((slide, index) => (
                       <button
                         key={`${slide.url}-${index}`}
                         type="button"
                         onClick={() => setCurrentSlideIndex(index)}
-                        className={`rounded-full transition-all ${
+                        className={`pointer-events-auto rounded-full transition-all ${
                           index === currentSlideIndex ? "h-2.5 w-6 bg-white" : "h-2.5 w-2.5 bg-white/45"
                         }`}
                         aria-label={`${index + 1}번째 이미지`}

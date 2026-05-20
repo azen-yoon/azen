@@ -412,4 +412,7 @@
 - `supabase/azen_service_cases.sql`, `supabase/azen_service_case_images.sql` 추가 — 코드 역추적 DDL + init-002 패턴 RLS(ADMIN-011 UPDATE 정책 포함)
 - UX-002/003: `PublicServicePageClient` 시공사례 모달 데스크톱 max-h 85vh+object-contain, 모바일 도트·터치 스와이프(좌우 버튼 md만)
 - UX-002 fix: 시공사례 모달 이미지 `w-full object-cover`로 통일, 검은 여백(bg-black·object-contain) 제거
-- UX-002/003 fix: 모달 `h-[85dvh]` 고정·이미지 flex-1, 도트 이미지 하단 오버레이, 스와이프 Y축 판별·touch-pan-y
+- UX-002/003 fix: 모달 `h-[85dvh]` 고정·이미지 flex-1, 도트 이미지 하단 오вер레이, 스와이프 Y축 판별·touch-pan-y
+- UX-003: 시공사례 모달 이미지 translateX 트랙 + `duration-300 ease-out` 슬라이드 전환 애니메이션
+- fix: 시공사례 모달 갤러리 트랙 width/slide % 명시·img block 레이아웃으로 이미지 미표시 복구
+- fix: 갤러리 ResizeObserver+px translate3d로 슬라이드 peek·레이아웃 깨짐 수정, nav z-20
