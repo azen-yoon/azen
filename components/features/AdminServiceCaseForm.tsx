@@ -22,7 +22,7 @@ interface AdminServiceCaseFormProps {
   initialCase?: ServiceCaseDetail;
   existingImages?: ServiceCaseImageRow[];
   action: (state: ServiceCaseFormState, formData: FormData) => Promise<ServiceCaseFormState>;
-  deleteImageAction?: (formData: FormData) => Promise<void>;
+  deleteImageAction?: (formData: FormData) => Promise<{ error: string | null } | void>;
   deleteCaseAction?: (formData: FormData) => Promise<void>;
 }
 
@@ -31,10 +31,12 @@ interface UrlInputItem {
   caption: string;
 }
 
+const EMPTY_EXISTING_IMAGES: ServiceCaseImageRow[] = [];
+
 export const AdminServiceCaseForm = ({
   mode,
   initialCase,
-  existingImages = [],
+  existingImages = EMPTY_EXISTING_IMAGES,
   action,
   deleteImageAction,
   deleteCaseAction,
@@ -60,12 +62,20 @@ export const AdminServiceCaseForm = ({
   const pageTitle = mode === "create" ? "시공사례 등록" : "시공사례 수정";
   const submitLabel = mode === "create" ? "시공사례 저장" : "수정 저장";
   const currentThumbnailUrl = useMemo(() => initialCase?.thumbnail_url ?? "", [initialCase?.thumbnail_url]);
+  const existingImagesKey = useMemo(
+    () => existingImages.map((image) => `${image.id}:${image.caption ?? ""}`).join("|"),
+    [existingImages],
+  );
 
   useEffect(() => {
+    if (mode !== "edit") {
+      return;
+    }
+
     setExistingImageCaptionById(
       Object.fromEntries(existingImages.map((image) => [image.id, image.caption ?? ""])),
     );
-  }, [existingImages]);
+  }, [mode, existingImagesKey, existingImages]);
 
   useEffect(() => {
     previewUrlsRef.current = additionalFilePreviews;

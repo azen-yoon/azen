@@ -62,7 +62,7 @@ interface AdminProductEditFormProps {
   product: ProductDetail;
   images: ProductImageItem[];
   updateAction: (state: UpdateProductFormState, formData: FormData) => Promise<UpdateProductFormState>;
-  deleteImageAction: (formData: FormData) => Promise<void>;
+  deleteImageAction: (formData: FormData) => Promise<{ error: string | null } | void>;
   deleteProductAction: (formData: FormData) => Promise<void>;
 }
 

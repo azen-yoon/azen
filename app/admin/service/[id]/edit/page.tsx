@@ -4,13 +4,17 @@ import { AdminServiceCaseForm } from "@/components/features/AdminServiceCaseForm
 import {
   collectStoragePathsFromUrls,
   createStoragePath,
-  getStoragePathFromPublicUrl,
   isValidUrl,
   parseExistingServiceCaseImageCaptions,
   SERVICE_CASE_IMAGE_BUCKET,
   type ServiceCaseDetail,
   type ServiceCaseImageRow,
 } from "@/lib/admin-service-cases";
+import {
+  deleteManagedAdditionalImage,
+  removeReplacedThumbnailFromStorage,
+  removeStoragePaths,
+} from "@/lib/admin-storage";
 import { createClient } from "@/lib/supabase/server";
 
 interface AdminServiceEditPageProps {
@@ -63,6 +67,7 @@ export default async function AdminServiceEditPage({ params }: AdminServiceEditP
     }
 
     const actionClient = await createClient();
+    const previousThumbnailUrl = caseDetail.thumbnail_url;
     let nextThumbnailUrl: string | null = caseDetail.thumbnail_url;
 
     if (thumbnailMode === "url") {
@@ -104,6 +109,16 @@ export default async function AdminServiceEditPage({ params }: AdminServiceEditP
 
     if (updateError) {
       return { error: `시공사례 수정에 실패했습니다: ${updateError.message}` };
+    }
+
+    const { error: thumbnailCleanupError } = await removeReplacedThumbnailFromStorage(
+      actionClient,
+      previousThumbnailUrl,
+      nextThumbnailUrl,
+      SERVICE_CASE_IMAGE_BUCKET,
+    );
+    if (thumbnailCleanupError) {
+      return { error: `이전 대표 이미지 Storage 삭제에 실패했습니다: ${thumbnailCleanupError}` };
     }
 
     const captionUpdates = parseExistingServiceCaseImageCaptions(formData.get("existing_image_captions_json"));
@@ -202,22 +217,30 @@ export default async function AdminServiceEditPage({ params }: AdminServiceEditP
     redirect(`/admin/service/${id}/edit?toast=updated`);
   };
 
-  const deleteImageAction = async (formData: FormData) => {
+  const deleteImageAction = async (formData: FormData): Promise<{ error: string | null }> => {
     "use server";
 
     const imageId = String(formData.get("image_id") ?? "");
-    const imageUrl = String(formData.get("image_url") ?? "");
     if (!imageId) {
-      return;
+      return { error: "삭제할 이미지 ID가 없습니다." };
     }
 
     const actionClient = await createClient();
-    const storagePath = getStoragePathFromPublicUrl(imageUrl);
-    if (storagePath) {
-      await actionClient.storage.from(SERVICE_CASE_IMAGE_BUCKET).remove([storagePath]);
+    const result = await deleteManagedAdditionalImage({
+      supabase: actionClient,
+      table: "azen_service_case_images",
+      parentColumn: "case_id",
+      parentId: id,
+      imageId,
+      bucket: SERVICE_CASE_IMAGE_BUCKET,
+    });
+
+    if (result.error) {
+      return result;
     }
-    await actionClient.from("azen_service_case_images").delete().eq("id", imageId).eq("case_id", id);
+
     revalidatePath(`/admin/service/${id}/edit`);
+    return { error: null };
   };
 
   const deleteCaseAction = async (formData: FormData) => {
@@ -236,11 +259,29 @@ export default async function AdminServiceEditPage({ params }: AdminServiceEditP
     ]);
 
     if (storagePaths.length > 0) {
-      await actionClient.storage.from(SERVICE_CASE_IMAGE_BUCKET).remove(storagePaths);
+      const { error: storageError } = await removeStoragePaths(
+        actionClient,
+        storagePaths,
+        SERVICE_CASE_IMAGE_BUCKET,
+      );
+      if (storageError) {
+        throw new Error(`Storage 파일 삭제에 실패했습니다: ${storageError}`);
+      }
     }
 
-    await actionClient.from("azen_service_case_images").delete().eq("case_id", id);
-    await actionClient.from("azen_service_cases").delete().eq("id", id);
+    const { error: imagesDeleteError } = await actionClient
+      .from("azen_service_case_images")
+      .delete()
+      .eq("case_id", id);
+    if (imagesDeleteError) {
+      throw new Error(`추가 이미지 DB 삭제에 실패했습니다: ${imagesDeleteError.message}`);
+    }
+
+    const { error: caseDeleteError } = await actionClient.from("azen_service_cases").delete().eq("id", id);
+    if (caseDeleteError) {
+      throw new Error(`시공사례 DB 삭제에 실패했습니다: ${caseDeleteError.message}`);
+    }
+
     redirect("/admin/service?toast=deleted");
   };
 

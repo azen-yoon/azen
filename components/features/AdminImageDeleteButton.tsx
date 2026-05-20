@@ -1,15 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 
 interface AdminImageDeleteButtonProps {
-  action: (formData: FormData) => Promise<void>;
+  action: (formData: FormData) => Promise<{ error: string | null } | void>;
   imageId: string;
   imageUrl: string;
 }
 
 export const AdminImageDeleteButton = ({ action, imageId, imageUrl }: AdminImageDeleteButtonProps) => {
+  const router = useRouter();
   const [isPending, setIsPending] = useState(false);
 
   const handleAction = async () => {
@@ -23,7 +25,12 @@ export const AdminImageDeleteButton = ({ action, imageId, imageUrl }: AdminImage
       const formData = new FormData();
       formData.append("image_id", imageId);
       formData.append("image_url", imageUrl);
-      await action(formData);
+      const result = await action(formData);
+      if (result?.error) {
+        window.alert(result.error);
+        return;
+      }
+      router.refresh();
     } finally {
       setIsPending(false);
     }

@@ -1,6 +1,13 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { AdminProductEditForm } from "@/components/features/AdminProductEditForm";
+import {
+  ADMIN_IMAGE_BUCKET,
+  collectStoragePathsFromUrls,
+  deleteManagedAdditionalImage,
+  removeReplacedThumbnailFromStorage,
+  removeStoragePaths,
+} from "@/lib/admin-storage";
 import { createClient } from "@/lib/supabase/server";
 
 interface AdminProductEditPageProps {
@@ -46,34 +53,6 @@ const isValidUrl = (value: string) => {
 const createStoragePath = (folder: string, filename: string, order = 0) => {
   const ext = filename.split(".").pop()?.toLowerCase() ?? "jpg";
   return `${folder}/${Date.now()}-${order}.${ext}`;
-};
-
-const getStoragePathFromPublicUrl = (url: string) => {
-  const marker = "/storage/v1/object/public/product-images/";
-  const index = url.indexOf(marker);
-  if (index === -1) {
-    return null;
-  }
-  const encodedPath = url.slice(index + marker.length).split("?")[0].split("#")[0];
-  if (!encodedPath) {
-    return null;
-  }
-  return decodeURIComponent(encodedPath);
-};
-
-const collectStoragePathsFromUrls = (urls: Array<string | null | undefined>) => {
-  const uniquePaths = new Set<string>();
-
-  for (const url of urls) {
-    if (!url) continue;
-
-    const storagePath = getStoragePathFromPublicUrl(url);
-    if (storagePath) {
-      uniquePaths.add(storagePath);
-    }
-  }
-
-  return [...uniquePaths];
 };
 
 const parseSpecItems = (value: FormDataEntryValue | null): ProductSpecItem[] => {
@@ -172,6 +151,7 @@ export default async function AdminProductEditPage({ params }: AdminProductEditP
     }
 
     const actionClient = await createClient();
+    const previousThumbnailUrl = product.thumbnail_url;
     let nextThumbnailUrl: string | null = product.thumbnail_url;
 
     if (thumbnailMode === "url") {
@@ -187,7 +167,7 @@ export default async function AdminProductEditPage({ params }: AdminProductEditP
       if (thumbnailFile instanceof File && thumbnailFile.size > 0) {
         const thumbnailPath = createStoragePath(`${id}/thumbnail`, thumbnailFile.name);
         const { error: uploadError } = await actionClient.storage
-          .from("product-images")
+          .from(ADMIN_IMAGE_BUCKET)
           .upload(thumbnailPath, thumbnailFile, {
             contentType: thumbnailFile.type || "image/jpeg",
             upsert: false,
@@ -195,7 +175,7 @@ export default async function AdminProductEditPage({ params }: AdminProductEditP
         if (uploadError) {
           return { error: `대표 이미지 업로드에 실패했습니다: ${uploadError.message}` };
         }
-        const { data } = actionClient.storage.from("product-images").getPublicUrl(thumbnailPath);
+        const { data } = actionClient.storage.from(ADMIN_IMAGE_BUCKET).getPublicUrl(thumbnailPath);
         nextThumbnailUrl = data.publicUrl;
       }
     }
@@ -222,6 +202,15 @@ export default async function AdminProductEditPage({ params }: AdminProductEditP
       return { error: `제품 수정에 실패했습니다: ${updateError.message}` };
     }
 
+    const { error: thumbnailCleanupError } = await removeReplacedThumbnailFromStorage(
+      actionClient,
+      previousThumbnailUrl,
+      nextThumbnailUrl,
+    );
+    if (thumbnailCleanupError) {
+      return { error: `이전 대표 이미지 Storage 삭제에 실패했습니다: ${thumbnailCleanupError}` };
+    }
+
     const additionalRows: Array<{ product_id: string; url: string; sort_order: number }> = [];
     if (additionalMode === "url") {
       const urls = formData
@@ -244,14 +233,14 @@ export default async function AdminProductEditPage({ params }: AdminProductEditP
         .filter((value): value is File => value instanceof File && value.size > 0);
       for (const [index, file] of files.entries()) {
         const path = createStoragePath(`${id}/gallery`, file.name, index);
-        const { error: uploadError } = await actionClient.storage.from("product-images").upload(path, file, {
+        const { error: uploadError } = await actionClient.storage.from(ADMIN_IMAGE_BUCKET).upload(path, file, {
           contentType: file.type || "image/jpeg",
           upsert: false,
         });
         if (uploadError) {
           return { error: `추가 이미지 업로드에 실패했습니다: ${uploadError.message}` };
         }
-        const { data } = actionClient.storage.from("product-images").getPublicUrl(path);
+        const { data } = actionClient.storage.from(ADMIN_IMAGE_BUCKET).getPublicUrl(path);
         additionalRows.push({
           product_id: id,
           url: data.publicUrl,
@@ -270,22 +259,29 @@ export default async function AdminProductEditPage({ params }: AdminProductEditP
     redirect("/admin/list");
   };
 
-  const deleteImageAction = async (formData: FormData) => {
+  const deleteImageAction = async (formData: FormData): Promise<{ error: string | null }> => {
     "use server";
 
     const imageId = String(formData.get("image_id") ?? "");
-    const imageUrl = String(formData.get("image_url") ?? "");
     if (!imageId) {
-      return;
+      return { error: "삭제할 이미지 ID가 없습니다." };
     }
 
     const actionClient = await createClient();
-    const storagePath = getStoragePathFromPublicUrl(imageUrl);
-    if (storagePath) {
-      await actionClient.storage.from("product-images").remove([storagePath]);
+    const result = await deleteManagedAdditionalImage({
+      supabase: actionClient,
+      table: "azen_product_images",
+      parentColumn: "product_id",
+      parentId: id,
+      imageId,
+    });
+
+    if (result.error) {
+      return result;
     }
-    await actionClient.from("azen_product_images").delete().eq("id", imageId).eq("product_id", id);
+
     revalidatePath(`/admin/products/${id}/edit`);
+    return { error: null };
   };
 
   const deleteProductAction = async (formData: FormData) => {
@@ -304,10 +300,22 @@ export default async function AdminProductEditPage({ params }: AdminProductEditP
     ]);
 
     if (storagePaths.length > 0) {
-      await actionClient.storage.from("product-images").remove(storagePaths);
+      const { error: storageError } = await removeStoragePaths(actionClient, storagePaths);
+      if (storageError) {
+        throw new Error(`Storage 파일 삭제에 실패했습니다: ${storageError}`);
+      }
     }
 
-    await actionClient.from("azen_products").delete().eq("id", id);
+    const { error: imagesDeleteError } = await actionClient.from("azen_product_images").delete().eq("product_id", id);
+    if (imagesDeleteError) {
+      throw new Error(`추가 이미지 DB 삭제에 실패했습니다: ${imagesDeleteError.message}`);
+    }
+
+    const { error: productDeleteError } = await actionClient.from("azen_products").delete().eq("id", id);
+    if (productDeleteError) {
+      throw new Error(`제품 DB 삭제에 실패했습니다: ${productDeleteError.message}`);
+    }
+
     redirect("/admin/list?toast=deleted");
   };
 
