@@ -161,8 +161,8 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
         <div className="absolute inset-0 bg-black/60" />
         <div className="relative z-10 flex min-h-[300px] items-end">
           <div className="mx-auto w-full max-w-6xl px-4 py-12">
-            <h1 className="font-english text-3xl font-bold text-white md:text-4xl">
-              {group === "filter" ? "Filter" : "Electric & Hydraulic"}
+            <h1 className="text-3xl font-bold text-white md:text-4xl">
+              {group === "filter" ? "제품소개" : "Electric & Hydraulic"}
             </h1>
             <p className="mt-2 text-sm leading-relaxed text-white/80 md:text-base">
               {group === "filter"

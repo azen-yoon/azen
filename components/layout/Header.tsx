@@ -70,7 +70,7 @@ export const Header = () => {
               onBlur={handleDropdownBlur}
             >
               <Link href="/products?category=filter" className={getNavClassName(isFilterActive)}>
-                필터
+                제품소개
               </Link>
               <div
                 id="filter-menu"
@@ -130,7 +130,7 @@ export const Header = () => {
                   className={getMobileDepthOneClassName(isFilterActive)}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  필터
+                  제품소개
                 </Link>
                 {filterMenuLinks.map((item) => (
                   <Link

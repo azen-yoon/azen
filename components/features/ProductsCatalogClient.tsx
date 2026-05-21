@@ -84,7 +84,7 @@ export const ProductsCatalogClient = ({
     });
   }, [products, search, selectedSub, group]);
 
-  const groupLabel = group === "filter" ? "필터" : "전기·유공압";
+  const groupLabel = group === "filter" ? "제품소개" : "전기·유공압";
 
   if (group === "filter") {
     const isWaterTab = urlCategorySlug === "water_treatment";

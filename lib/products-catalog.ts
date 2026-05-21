@@ -40,6 +40,17 @@ export type ProductCatalogGroup = "filter" | "electric";
 export const PARENT_SLUG_FILTER = "filter";
 export const PARENT_SLUG_ELECTRIC = "electric";
 
+export const CATALOG_GROUP_NAV_LABEL: Record<ProductCatalogGroup, string> = {
+  filter: "제품소개",
+  electric: "전기·유공압",
+};
+
+export const getCatalogBreadcrumbLabel = (slug: string, name: string): string => {
+  if (slug === PARENT_SLUG_FILTER || name === "필터" || name === "제품 소개") return CATALOG_GROUP_NAV_LABEL.filter;
+  if (slug === PARENT_SLUG_ELECTRIC) return CATALOG_GROUP_NAV_LABEL.electric;
+  return name;
+};
+
 export const isFilterSubSlug = (s: string): boolean =>
   (FILTER_SUB_SLUGS as readonly string[]).includes(s);
 

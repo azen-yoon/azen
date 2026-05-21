@@ -4,7 +4,7 @@ import { unstable_cache } from "next/cache";
 import type { Metadata } from "next";
 import { ClipboardList, ListChecks } from "lucide-react";
 import { createStaticClient } from "@/lib/supabase/static";
-import { WATER_SUB_SLUGS } from "@/lib/products-catalog";
+import { getCatalogBreadcrumbLabel, WATER_SUB_SLUGS } from "@/lib/products-catalog";
 import { ProductDetailBackButton } from "@/components/features/ProductDetailBackButton";
 import { ProductDetailHtmlContent } from "@/components/features/ProductDetailHtmlContent";
 import { ProductGallery } from "@/components/features/ProductGallery";
@@ -207,7 +207,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                       href={`/products?category=${encodeURIComponent(parentCategory.slug)}`}
                       className={crumbLinkClass}
                     >
-                      {parentCategory.name}
+                      {getCatalogBreadcrumbLabel(parentCategory.slug, parentCategory.name)}
                     </Link>
                     <span className="px-0.5 text-muted-foreground/60" aria-hidden>&gt;</span>
                     <Link

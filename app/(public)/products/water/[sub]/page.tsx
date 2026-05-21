@@ -122,8 +122,8 @@ export default async function WaterSubProductsPage({ params }: WaterSubPageProps
             className="min-w-0 pl-[calc(2.5rem+0.75rem)] pt-1 text-sm text-muted-foreground"
           >
             <span className="flex flex-wrap items-center gap-x-1 gap-y-1">
-              <Link href="/products?category=air_handling" className={crumbLinkClass}>
-                필터
+              <Link href="/products?category=filter" className={crumbLinkClass}>
+                제품소개
               </Link>
               <span className="px-0.5 text-muted-foreground/60" aria-hidden>
                 &gt;
