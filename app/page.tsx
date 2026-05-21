@@ -6,16 +6,16 @@ import { Factory, ShieldCheck, Truck, Wrench } from "lucide-react";
 import { HomeHeroPhoneCtas } from "@/components/features/HomeHeroPhoneCtas";
 import { HomeProductsCarousel } from "@/components/features/HomeProductsCarousel";
 import { createStaticClient } from "@/lib/supabase/static";
-import { buildOpenGraph, DEFAULT_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/seo";
+import { buildOpenGraph, DEFAULT_DESCRIPTION, SITE_TITLE, SITE_URL } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: { absolute: SITE_NAME },
+  title: { absolute: SITE_TITLE },
   description: DEFAULT_DESCRIPTION,
   alternates: {
     canonical: `${SITE_URL}/`,
   },
   openGraph: buildOpenGraph({
-    title: SITE_NAME,
+    title: SITE_TITLE,
     url: SITE_URL,
   }),
 };

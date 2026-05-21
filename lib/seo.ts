@@ -3,12 +3,13 @@ import type { Metadata } from "next";
 import { createStaticClient } from "@/lib/supabase/static";
 
 export const SITE_NAME = "AZEN";
+export const SITE_TITLE = "에이젠 필터 - 산업용 필터 전문 기업 azen";
 export const SITE_URL = "https://www.a-zen.co.kr";
 export const OG_IMAGE_PATH = "/og-image.png";
 export const DEFAULT_OG_IMAGE_URL = `${SITE_URL}${OG_IMAGE_PATH}`;
 
 export const SITE_DESCRIPTION =
-  "멈추지 않는 공정, 빈틈없는 필터 케어 솔루션. AZEN이 책임집니다.";
+  "산업용 필터 전문 에이젠(a-zen) 공식 웹사이트입니다. 공조용 에어 필터, 집진기 필터 등 고효율 맞춤형 산업 필터 솔루션을 확인해 보세요.";
 
 export const DEFAULT_DESCRIPTION = SITE_DESCRIPTION;
 export const DEFAULT_OG_DESCRIPTION = SITE_DESCRIPTION;

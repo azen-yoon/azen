@@ -8,6 +8,7 @@ import {
   DEFAULT_DESCRIPTION,
   DEFAULT_KEYWORDS,
   SITE_NAME,
+  SITE_TITLE,
   SITE_URL,
 } from "@/lib/seo";
 import "./globals.css";
@@ -16,13 +17,13 @@ import "./prose.css";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} | 산업용 필터 솔루션`,
+    default: SITE_TITLE,
     template: `%s | ${SITE_NAME}`,
   },
   description: DEFAULT_DESCRIPTION,
   keywords: DEFAULT_KEYWORDS,
   openGraph: buildOpenGraph({
-    title: `${SITE_NAME} | 산업용 필터 솔루션`,
+    title: SITE_TITLE,
     url: SITE_URL,
   }),
   verification: {
