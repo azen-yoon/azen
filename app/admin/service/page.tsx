@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Plus, Wrench } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 
+export const preferredRegion = "icn1";
+
 interface ServiceCaseListRow {
   id: string;
   title: string;

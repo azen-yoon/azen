@@ -17,6 +17,8 @@ import {
 } from "@/lib/admin-storage";
 import { createClient } from "@/lib/supabase/server";
 
+export const preferredRegion = "icn1";
+
 interface AdminServiceEditPageProps {
   params: Promise<{ id: string }>;
 }

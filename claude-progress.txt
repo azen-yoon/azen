@@ -410,6 +410,7 @@
 - `lib/admin-storage.ts` 추가: Storage 삭제 유틸 + `deleteManagedAdditionalImage`, 제품·시공사례 추가 이미지/대표 이미지 교체/전체 삭제 시 DB+Storage 동시 삭제 및 에러 처리
 - feedback.md 반영: `admin-storage.ts` Storage 에러 `${storageError}` 수정, `service/page.tsx` DB 조회 error 로그, 제품 admin new/edit `isValidUrl`·`createStoragePath` lib import 통합
 - `supabase/azen_service_cases.sql`, `supabase/azen_service_case_images.sql` 추가 — 코드 역추적 DDL + init-002 패턴 RLS(ADMIN-011 UPDATE 정책 포함)
+- Vercel 함수 리전 서울 고정: `vercel.json` `regions: ["icn1"]`, Supabase 진입 페이지에 `export const preferredRegion = "icn1"` 추가
 - UX-002/003: `PublicServicePageClient` 시공사례 모달 데스크톱 max-h 85vh+object-contain, 모바일 도트·터치 스와이프(좌우 버튼 md만)
 - UX-002 fix: 시공사례 모달 이미지 `w-full object-cover`로 통일, 검은 여백(bg-black·object-contain) 제거
 - UX-002/003 fix: 모달 `h-[85dvh]` 고정·이미지 flex-1, 도트 이미지 하단 오вер레이, 스와이프 Y축 판별·touch-pan-y

@@ -1,6 +1,8 @@
 import { AdminMainCarouselForm } from "@/components/features/AdminMainCarouselForm";
 import { createClient } from "@/lib/supabase/server";
 
+export const preferredRegion = "icn1";
+
 interface MainCarouselFormState {
   success: string | null;
   error: string | null;

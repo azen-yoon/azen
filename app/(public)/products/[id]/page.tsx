@@ -11,6 +11,7 @@ import { ProductGallery } from "@/components/features/ProductGallery";
 import { createPageMetadata, getProductForSeo, stripHtml } from "@/lib/seo";
 
 export const revalidate = 300;
+export const preferredRegion = "icn1";
 
 interface ProductDetailPageProps {
   params: Promise<{ id: string }>;

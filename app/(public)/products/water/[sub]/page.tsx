@@ -13,6 +13,7 @@ import {
 import { createPageMetadata } from "@/lib/seo";
 
 export const revalidate = 300;
+export const preferredRegion = "icn1";
 
 interface WaterSubPageProps {
   params: Promise<{ sub: string }>;

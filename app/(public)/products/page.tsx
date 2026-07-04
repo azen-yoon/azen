@@ -16,6 +16,7 @@ import { ProductsCatalogClient, type CatalogProduct } from "@/components/feature
 import { createPageMetadata } from "@/lib/seo";
 
 export const revalidate = 300;
+export const preferredRegion = "icn1";
 
 interface ProductsPageProps {
   searchParams: Promise<{ category?: string }>;

@@ -21,6 +21,7 @@ export const metadata: Metadata = {
 };
 
 export const revalidate = 300;
+export const preferredRegion = "icn1";
 
 const featureCards = [
   {

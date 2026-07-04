@@ -11,6 +11,7 @@ export const metadata = createPageMetadata({
 });
 
 export const revalidate = 300;
+export const preferredRegion = "icn1";
 
 interface ServiceCaseRow {
   id: string;

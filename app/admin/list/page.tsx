@@ -3,6 +3,8 @@ import { Plus, Tag } from "lucide-react";
 import { AdminProductListControls } from "@/components/features/AdminProductListControls";
 import { createClient } from "@/lib/supabase/server";
 
+export const preferredRegion = "icn1";
+
 interface ProductListRow {
   id: string;
   name: string;

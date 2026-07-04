@@ -1,6 +1,7 @@
 import { LoginForm } from "@/components/features/LoginForm";
 
 export const dynamic = "force-dynamic";
+export const preferredRegion = "icn1";
 
 export default function LoginPage() {
   return (

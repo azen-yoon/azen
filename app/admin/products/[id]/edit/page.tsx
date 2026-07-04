@@ -11,6 +11,8 @@ import {
 import { createStoragePath, isValidUrl } from "@/lib/admin-service-cases";
 import { createClient } from "@/lib/supabase/server";
 
+export const preferredRegion = "icn1";
+
 interface AdminProductEditPageProps {
   params: Promise<{ id: string }>;
 }
